@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Assistente de Primeiras Declarações</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+    <button id="btn-menu" class="btn-menu" type="button" title="Mostrar ou ocultar menu">
+        ×
+    </button>
+
+
+    <div class="pagina">
+
+        <!-- ==========================================
+             Menu Lateral
+             ========================================== -->
+
+        <aside class="menu-lateral">
+
+            <h1>PRIMEIRAS DECLARAÇÕES</h1>
+
+            <p class="subtitulo">
+                Assistente para o Preenchimento de Inventários e Partilhas
+            </p>
+
+
+            <div id="status-api" class="status-api">
+                Verificando API...
+            </div>
+
+
+            <ul class="menu-etapas">
+
+                <li class="item-menu ativa" data-etapa="0">
+                    1. Autoria da Herança
+                </li>
+
+                <li class="item-menu" data-etapa="1">
+                    2. Meeiro e Herdeiros
+                </li>
+
+                <li class="item-menu" data-etapa="2">
+                    3. Bens
+                </li>
+
+                <li class="item-menu" data-etapa="3">
+                    4. Dívidas
+                </li>
+
+                <li class="item-menu" data-etapa="4">
+                    5. Meação e Partilha
+                </li>
+
+                <li class="item-menu" data-etapa="5">
+                    6. Auto de Orçamento
+                </li>
+
+                <li class="item-menu" data-etapa="6">
+                    7. ITCM - Estimativa
+                </li>
+
+                <li class="item-menu" data-etapa="7">
+                    8. Documentos
+                </li>
+
+                <li class="item-menu" data-etapa="8">
+                    9. Folha de Pagamento
+                </li>
+
+            </ul>
+
+
+            <div class="resumo-lateral">
+
+                <h3>Resumo</h3>
+
+                <div class="resumo-item">
+                    Falecido:
+                    <strong id="resumo-nome">
+                        Não informado
+                    </strong>
+                </div>
+
+                <div class="resumo-item">
+                    Herdeiros:
+                    <strong id="resumo-herdeiros">
+                        0
+                    </strong>
+                </div>
+
+                <div class="resumo-item">
+                    Bens:
+                    <strong id="resumo-bens">
+                        0
+                    </strong>
+                </div>
+
+                <div class="resumo-item">
+                    Dívidas:
+                    <strong id="resumo-dividas">
+                        0
+                    </strong>
+                </div>
+
+                <div class="resumo-item">
+                    Acervo líquido:
+                    <strong id="resumo-liquido">
+                        R$ 0,00
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <button id="btn-novo" class="btn-novo">
+                Novo inventário
+            </button>
+
+        </aside>
+
+
+        <!-- ==========================================
+             Conteúdo Principal
+             ========================================== -->
+
+        <main class="conteudo-principal">
+
+            <div class="conteudo">
+
+                <div id="mensagem-geral" class="mensagem"></div>
+
+
+                <!-- ==========================================
+                     Autoria da Herança
+                     ========================================== -->
+
+                <section class="etapa ativa" data-etapa="0">
+
+                    <h2>
+                        1. DA AUTORIA DA HERANÇA
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Art. 620, I do CPC
+                    </div>
+
+                    <p class="descricao-etapa">
+                        Dados da pessoa falecida e informações básicas do inventário.
+                    </p>
+
+
+                    <form id="form-falecido">
+
+                        <div class="grupo-formulario">
+
+                            <label for="falecido-nome">
+                                Nome
+                            </label>
+
+                            <input type="text" id="falecido-nome">
+
+                        </div>
+
+
+                        <div class="linha-formulario">
+
+                            <div class="grupo-formulario">
+
+                                <label for="falecido-cpf">
+                                    CPF
+                                </label>
+
+                                <input type="text" id="falecido-cpf">
+
+                            </div>
+
+
+                            <div class="grupo-formulario">
+
+                                <label for="falecido-identidade">
+                                    Documento de identidade
+                                </label>
+
+                                <input type="text" id="falecido-identidade">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="falecido-data">
+                                Data do falecimento
+                            </label>
+
+                            <input type="date" id="falecido-data">
+
+                        </div>
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="falecido-endereco">
+                                Último endereço
+                            </label>
+
+                            <input type="text" id="falecido-endereco">
+
+                        </div>
+
+
+                        <div class="linha-formulario">
+
+                            <div class="grupo-formulario">
+
+                                <label for="falecido-estado-civil">
+                                    Estado civil
+                                </label>
+
+                                <input type="text" id="falecido-estado-civil">
+
+                            </div>
+
+
+                            <div class="grupo-formulario">
+
+                                <label for="falecido-regime">
+                                    Regime de bens
+                                </label>
+
+                                <input type="text" id="falecido-regime">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="falecido-testamento">
+                                Existe testamento?
+                            </label>
+
+                            <select id="falecido-testamento">
+
+                                <option value="">
+                                    Não informado
+                                </option>
+
+                                <option value="false">
+                                    Não
+                                </option>
+
+                                <option value="true">
+                                    Sim
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="botoes-formulario">
+
+                            <button type="submit" class="btn-principal">
+                                Salvar dados
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </section>
+
+
+                <!-- ==========================================
+                     Meeiro e Herdeiros
+                     ========================================== -->
+
+                <section class="etapa" data-etapa="1">
+
+                    <h2>
+                        2. DO MEEIRO E HERDEIROS
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Art. 620, II do CPC
+                    </div>
+
+
+                    <div class="formulario-bloco">
+
+                        <h3>Cônjuge ou companheiro</h3>
+
+                        <form id="form-conjuge">
+
+                            <input type="hidden" id="conjuge-id">
+
+
+                            <div class="grupo-formulario">
+
+                                <label for="conjuge-nome">
+                                    Nome
+                                </label>
+
+                                <input type="text" id="conjuge-nome">
+
+                            </div>
+
+
+                            <div class="linha-formulario">
+
+                                <div class="grupo-formulario">
+
+                                    <label for="conjuge-cpf">
+                                        CPF
+                                    </label>
+
+                                    <input type="text" id="conjuge-cpf">
+
+                                </div>
+
+
+                                <div class="grupo-formulario">
+
+                                    <label for="conjuge-identidade">
+                                        Identidade
+                                    </label>
+
+                                    <input type="text" id="conjuge-identidade">
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="grupo-formulario">
+
+                                <label for="conjuge-endereco">
+                                    Endereço
+                                </label>
+
+                                <input type="text" id="conjuge-endereco">
+
+                            </div>
+
+
+                            <div class="botoes-formulario">
+
+                                <button type="submit" class="btn-principal">
+                                    Salvar cônjuge
+                                </button>
+
+                                <button type="button" id="btn-excluir-conjuge" class="btn-excluir">
+                                    Excluir
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+
+                    <div class="formulario-bloco">
+
+                        <h3>Herdeiros</h3>
+
+                        <form id="form-herdeiro">
+
+                            <input type="hidden" id="herdeiro-id">
+
+
+                            <div class="grupo-formulario">
+
+                                <label for="herdeiro-nome">
+                                    Nome
+                                </label>
+
+                                <input type="text" id="herdeiro-nome">
+
+                            </div>
+
+
+                            <div class="linha-formulario">
+
+                                <div class="grupo-formulario">
+
+                                    <label for="herdeiro-cpf">
+                                        CPF
+                                    </label>
+
+                                    <input type="text" id="herdeiro-cpf">
+
+                                </div>
+
+
+                                <div class="grupo-formulario">
+
+                                    <label for="herdeiro-identidade">
+                                        Identidade
+                                    </label>
+
+                                    <input type="text" id="herdeiro-identidade">
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="grupo-formulario">
+
+                                <label for="herdeiro-endereco">
+                                    Endereço
+                                </label>
+
+                                <input type="text" id="herdeiro-endereco">
+
+                            </div>
+
+
+                            <div class="grupo-formulario">
+
+                                <label for="herdeiro-parentesco">
+                                    Grau de parentesco
+                                </label>
+
+                                <input type="text" id="herdeiro-parentesco">
+
+                            </div>
+
+
+                            <button type="submit" class="btn-principal">
+                                Salvar herdeiro
+                            </button>
+
+                        </form>
+
+
+                        <div id="lista-herdeiros" class="lista-cards"></div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     Bens
+                     ========================================== -->
+
+                <section class="etapa" data-etapa="2">
+
+                    <h2>
+                        3. DOS BENS IMÓVEIS E MÓVEIS
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Código de Processo Civil (CPC)
+                    </div>
+
+
+                    <form id="form-bem">
+
+                        <input type="hidden" id="bem-id">
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="bem-descricao">
+                                Descrição do bem
+                            </label>
+
+                            <textarea id="bem-descricao"></textarea>
+
+                        </div>
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="bem-valor">
+                                Valor
+                            </label>
+
+                            <input type="number" id="bem-valor" step="0.01" min="0">
+
+                        </div>
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="bem-condominio">
+                                O bem está em condomínio?
+                            </label>
+
+                            <select id="bem-condominio">
+
+                                <option value="">
+                                    Não informado
+                                </option>
+
+                                <option value="false">
+                                    Não
+                                </option>
+
+                                <option value="true">
+                                    Sim
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="grupo-formulario" id="campo-percentual" style="display: none;">
+
+                            <label for="bem-percentual">
+                                Qual percentual pertencia ao falecido?
+                            </label>
+
+                            <input type="number" id="bem-percentual" min="0" max="100" step="0.01">
+
+                        </div>
+
+
+                        <button type="submit" class="btn-principal">
+                            Salvar bem
+                        </button>
+
+                    </form>
+
+
+                    <div id="lista-bens" class="lista-cards"></div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     Dívidas
+                     ========================================== -->
+
+                <section class="etapa" data-etapa="3">
+
+                    <h2>
+                        4. DAS DÍVIDAS
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Código de Processo Civil (CPC)
+                    </div>
+
+
+                    <form id="form-divida">
+
+                        <input type="hidden" id="divida-id">
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="divida-descricao">
+                                Descrição
+                            </label>
+
+                            <input type="text" id="divida-descricao">
+
+                        </div>
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="divida-credor">
+                                Credor
+                            </label>
+
+                            <input type="text" id="divida-credor">
+
+                        </div>
+
+
+                        <div class="grupo-formulario">
+
+                            <label for="divida-valor">
+                                Valor
+                            </label>
+
+                            <input type="number" id="divida-valor" min="0" step="0.01">
+
+                        </div>
+
+
+                        <button type="submit" class="btn-principal">
+                            Salvar dívida
+                        </button>
+
+                    </form>
+
+
+                    <div id="lista-dividas" class="lista-cards"></div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     Meação e Partilha
+                     ========================================== -->
+
+                <section class="etapa" data-etapa="4">
+
+                    <h2>
+                        5. DA MEAÇÃO E DA PARTILHA
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Código de Processo Civil (CPC)
+                    </div>
+
+
+                    <div class="resumo-patrimonial">
+
+                        <div class="card-valor">
+
+                            <span>
+                                Bens do falecido
+                            </span>
+
+                            <strong class="valor-bens">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+
+                        <div class="card-valor">
+
+                            <span>
+                                Dívidas
+                            </span>
+
+                            <strong class="valor-dividas">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+
+                        <div class="card-valor">
+
+                            <span>
+                                Acervo líquido
+                            </span>
+
+                            <strong class="valor-liquido">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="tabela-container">
+
+                        <table class="tabela">
+
+                            <thead>
+
+                                <tr>
+                                    <th>Herdeiro</th>
+                                    <th>Qualidade</th>
+                                    <th>Quota estimada</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="tabela-partilha-corpo">
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     Auto de Orçamento
+                     ========================================== -->
+
+                <section class="etapa" data-etapa="5">
+
+                    <h2>
+                        6. DO AUTO DE ORÇAMENTO
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Art. 653, I do CPC
+                    </div>
+
+
+                    <div class="resumo-patrimonial">
+
+                        <div class="card-valor">
+
+                            <span>
+                                Ativo considerado
+                            </span>
+
+                            <strong class="valor-bens">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+
+                        <div class="card-valor">
+
+                            <span>
+                                Passivo informado
+                            </span>
+
+                            <strong class="valor-dividas">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+
+                        <div class="card-valor">
+
+                            <span>
+                                Acervo líquido
+                            </span>
+
+                            <strong class="valor-liquido">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     ITCM
+                     ========================================== -->
+
+                <section class="etapa" data-etapa="6">
+
+                    <h2>
+                        7. ITCM - ESTIMATIVA
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Estimativa tributária
+                    </div>
+
+
+                    <div class="resumo-patrimonial">
+
+                        <div class="card-valor">
+
+                            <span>
+                                Acervo líquido considerado
+                            </span>
+
+                            <strong class="valor-liquido">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <button id="btn-itd" class="btn-principal">
+                        Calcular estimativa
+                    </button>
+
+
+                    <div id="resultado-itd" style="display: none;">
+
+                        <div class="tabela-container">
+
+                            <table class="tabela">
+
+                                <tbody>
+
+                                    <tr>
+                                        <th>Base utilizada</th>
+                                        <td id="itd-base"></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Base em UFIR-RJ</th>
+                                        <td id="itd-ufir"></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Alíquota estimada</th>
+                                        <td id="itd-aliquota"></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Valor estimado</th>
+                                        <td id="itd-valor"></td>
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     Documentos
+                     ========================================== -->
+
+                <section class="etapa" data-etapa="7">
+
+                    <h2>
+                        8. DOS DOCUMENTOS
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Código de Processo Civil (CPC)
+                    </div>
+
+
+                    <div class="checklist">
+
+                        <label>
+                            <input type="checkbox">
+                            Certidão de casamento
+                        </label>
+
+                        <label>
+                            <input type="checkbox">
+                            Procuração e documentos de representação
+                        </label>
+
+                        <label>
+                            <input type="checkbox">
+                            Certidão da Justiça Federal
+                        </label>
+
+                        <label>
+                            <input type="checkbox">
+                            Certidão da Receita Federal
+                        </label>
+
+                        <label>
+                            <input type="checkbox">
+                            Certidões dos distribuidores
+                        </label>
+
+                        <label>
+                            <input type="checkbox">
+                            Certidões de ônus reais
+                        </label>
+
+                        <label>
+                            <input type="checkbox">
+                            Certidões enfitêuticas
+                        </label>
+
+                        <label>
+                            <input type="checkbox">
+                            Extratos bancários
+                        </label>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     Folha de Pagamento
+                     ========================================== -->
+
+                <section class="etapa" data-etapa="8">
+
+                    <h2>
+                        9. DA FOLHA DE PAGAMENTO
+                    </h2>
+
+                    <div class="referencia-legal">
+                        Art. 653, II do CPC
+                    </div>
+
+
+                    <div class="tabela-container">
+
+                        <table class="tabela">
+
+                            <thead>
+
+                                <tr>
+                                    <th>Beneficiário</th>
+                                    <th>Qualidade</th>
+                                    <th>Valor estimado</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="tabela-pagamento-corpo">
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     Navegação
+                     ========================================== -->
+
+                <div class="navegacao">
+
+                    <button id="btn-anterior" class="btn-secundario">
+                        Voltar
+                    </button>
+
+                    <button id="btn-proximo" class="btn-principal">
+                        Avançar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>

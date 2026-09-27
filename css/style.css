@@ -1,0 +1,743 @@
+/* ==========================================
+   Estrutura Geral
+   ========================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #101214;
+    color: #f4f4f4;
+}
+
+.pagina {
+    min-height: 100vh;
+}
+
+
+/* ==========================================
+   Menu Lateral
+   ========================================== */
+
+.menu-lateral {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 280px;
+    height: 100vh;
+
+    background-color: #30353b;
+    color: #ffffff;
+
+    border-right: 1px solid #555b61;
+
+    padding: 25px 20px;
+
+    overflow-y: auto;
+
+    transition: transform 0.25s ease;
+}
+
+.menu-lateral h1 {
+    margin: 15px 0 6px 0;
+
+    color: #ffffff;
+
+    font-size: 21px;
+
+    text-align: center;
+}
+
+.subtitulo {
+    margin-top: 8px;
+    margin-bottom: 20px;
+
+    color: #d1d1d1;
+
+    font-size: 12px;
+    line-height: 1.5;
+
+    text-align: center;
+}
+
+.status-api {
+    background-color: #3c4248;
+
+    border: 1px solid #646b72;
+    border-radius: 5px;
+
+    color: #ffffff;
+
+    padding: 9px 10px;
+
+    margin-bottom: 20px;
+
+    font-size: 12px;
+
+    text-align: center;
+}
+
+.status-api.online {
+    color: #9ee0ae;
+    border-color: #5f936b;
+}
+
+.status-api.offline {
+    color: #ffaaa5;
+    border-color: #a95c57;
+}
+
+.menu-etapas {
+    list-style: none;
+
+    margin: 0;
+    padding: 0;
+}
+
+.item-menu {
+    padding: 10px;
+
+    margin-bottom: 5px;
+
+    border-radius: 5px;
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.item-menu:hover {
+    background-color: #484e54;
+}
+
+.item-menu.ativa {
+    background-color: #ffffff;
+    color: #111111;
+
+    font-weight: bold;
+}
+
+.resumo-lateral {
+    margin-top: 25px;
+    padding-top: 15px;
+
+    border-top: 1px solid #666c72;
+}
+
+.resumo-lateral h3 {
+    margin-top: 0;
+
+    color: #ffffff;
+
+    font-size: 15px;
+}
+
+.resumo-item {
+    margin-bottom: 8px;
+
+    color: #dcdcdc;
+
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.resumo-item strong {
+    color: #ffffff;
+}
+
+.btn-novo {
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 9px;
+
+    background-color: #ffffff;
+    color: #111111;
+
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+
+    cursor: pointer;
+}
+
+.btn-novo:hover {
+    background-color: #dcdcdc;
+}
+
+
+/* ==========================================
+   Botão do Menu
+   ========================================== */
+
+.btn-menu {
+    position: fixed;
+
+    top: 15px;
+    left: 295px;
+
+    width: 42px;
+    height: 42px;
+
+    z-index: 1000;
+
+    background-color: #ffffff;
+    color: #111111;
+
+    border: 1px solid #555555;
+    border-radius: 5px;
+
+    font-size: 23px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: left 0.25s ease;
+}
+
+.btn-menu:hover {
+    background-color: #dcdcdc;
+}
+
+
+/* ==========================================
+   Menu Fechado
+   ========================================== */
+
+body.menu-fechado .menu-lateral {
+    transform: translateX(-100%);
+}
+
+body.menu-fechado .conteudo-principal {
+    margin-left: 0;
+}
+
+body.menu-fechado .btn-menu {
+    left: 15px;
+}
+
+
+/* ==========================================
+   Conteúdo Principal
+   ========================================== */
+
+.conteudo-principal {
+    margin-left: 280px;
+
+    min-height: 100vh;
+
+    padding: 40px;
+
+    background-color: #101214;
+
+    transition: margin-left 0.25s ease;
+}
+
+.conteudo {
+    max-width: 1000px;
+
+    margin: 0 auto;
+
+    padding: 35px;
+
+    background-color: #1b1f23;
+    color: #f5f5f5;
+
+    border: 1px solid #3a4046;
+    border-radius: 8px;
+
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+}
+
+
+/* ==========================================
+   Etapas
+   ========================================== */
+
+.etapa {
+    display: none;
+}
+
+.etapa.ativa {
+    display: block;
+
+    animation: entradaEtapa 0.2s ease;
+}
+
+@keyframes entradaEtapa {
+
+    from {
+        opacity: 0;
+        transform: translateX(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.etapa h2 {
+    margin-top: 0;
+    margin-bottom: 8px;
+
+    color: #ffffff;
+
+    font-size: 22px;
+}
+
+.descricao-etapa {
+    margin-top: 5px;
+    margin-bottom: 20px;
+
+    color: #c7c7c7;
+
+    font-size: 14px;
+}
+
+.referencia-legal {
+    margin-bottom: 25px;
+
+    padding: 10px 12px;
+
+    background-color: #272c31;
+
+    border-left: 4px solid #ffffff;
+
+    color: #dddddd;
+
+    font-size: 14px;
+}
+
+
+/* ==========================================
+   Mensagens
+   ========================================== */
+
+.mensagem {
+    display: none;
+
+    padding: 10px 14px;
+
+    margin-bottom: 20px;
+
+    border-radius: 5px;
+
+    font-size: 14px;
+}
+
+.mensagem.sucesso {
+    display: block;
+
+    background-color: #183c23;
+
+    border: 1px solid #4f9d66;
+
+    color: #b8e8c5;
+}
+
+.mensagem.erro {
+    display: block;
+
+    background-color: #48201d;
+
+    border: 1px solid #b15c56;
+
+    color: #ffb8b3;
+}
+
+.mensagem.aviso {
+    display: block;
+
+    background-color: #413918;
+
+    border: 1px solid #9d8b41;
+
+    color: #f2dfa0;
+}
+
+
+/* ==========================================
+   Formulários
+   ========================================== */
+
+.grupo-formulario {
+    margin-bottom: 18px;
+}
+
+.grupo-formulario label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.grupo-formulario input,
+.grupo-formulario select,
+.grupo-formulario textarea {
+    width: 100%;
+
+    padding: 10px;
+
+    background-color: #ffffff;
+    color: #111111;
+
+    border: 1px solid #888888;
+    border-radius: 5px;
+
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+}
+
+.grupo-formulario input:focus,
+.grupo-formulario select:focus,
+.grupo-formulario textarea:focus {
+    outline: none;
+
+    background-color: #f1fff5;
+
+    border-color: #57aa70;
+
+    box-shadow: 0 0 0 2px rgba(87, 170, 112, 0.25);
+}
+
+.grupo-formulario textarea {
+    min-height: 90px;
+
+    resize: vertical;
+}
+
+.linha-formulario {
+    display: flex;
+
+    gap: 15px;
+}
+
+.linha-formulario .grupo-formulario {
+    flex: 1;
+}
+
+.formulario-bloco {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid #444a50;
+}
+
+.formulario-bloco h3 {
+    color: #ffffff;
+}
+
+
+/* ==========================================
+   Botões
+   ========================================== */
+
+.botoes-formulario {
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 15px;
+
+    flex-wrap: wrap;
+}
+
+button {
+    font-family: Arial, sans-serif;
+}
+
+.btn-principal {
+    padding: 9px 18px;
+
+    background-color: #ffffff;
+    color: #111111;
+
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+
+    cursor: pointer;
+}
+
+.btn-principal:hover {
+    background-color: #d7d7d7;
+}
+
+.btn-secundario {
+    padding: 9px 18px;
+
+    background-color: #292e33;
+    color: #ffffff;
+
+    border: 1px solid #777777;
+    border-radius: 5px;
+
+    cursor: pointer;
+}
+
+.btn-secundario:hover {
+    background-color: #3a4046;
+}
+
+.btn-excluir {
+    padding: 8px 12px;
+
+    background-color: #9f3934;
+    color: #ffffff;
+
+    border: none;
+    border-radius: 4px;
+
+    cursor: pointer;
+}
+
+.btn-excluir:hover {
+    background-color: #be4942;
+}
+
+.btn-editar {
+    padding: 8px 12px;
+
+    background-color: #c8942c;
+    color: #111111;
+
+    border: none;
+    border-radius: 4px;
+
+    cursor: pointer;
+}
+
+.btn-editar:hover {
+    background-color: #e1ad43;
+}
+
+
+/* ==========================================
+   Navegação
+   ========================================== */
+
+.navegacao {
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-top: 30px;
+    padding-top: 20px;
+
+    border-top: 1px solid #444a50;
+}
+
+
+/* ==========================================
+   Cards
+   ========================================== */
+
+.lista-cards {
+    margin-top: 20px;
+}
+
+.card {
+    margin-bottom: 10px;
+
+    padding: 14px;
+
+    background-color: #252a2f;
+    color: #ffffff;
+
+    border: 1px solid #484e54;
+    border-left: 4px solid #ffffff;
+    border-radius: 5px;
+}
+
+.card h4 {
+    margin: 0 0 6px 0;
+
+    color: #ffffff;
+}
+
+.card p {
+    margin: 4px 0;
+
+    color: #d6d6d6;
+
+    font-size: 14px;
+}
+
+.card-acoes {
+    display: flex;
+
+    gap: 8px;
+
+    margin-top: 10px;
+}
+
+
+/* ==========================================
+   Resumo Patrimonial
+   ========================================== */
+
+.resumo-patrimonial {
+    display: flex;
+
+    gap: 12px;
+
+    margin-bottom: 25px;
+
+    flex-wrap: wrap;
+}
+
+.card-valor {
+    flex: 1;
+
+    min-width: 180px;
+
+    padding: 15px;
+
+    background-color: #252a2f;
+
+    border: 1px solid #484e54;
+    border-radius: 6px;
+}
+
+.card-valor span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #cccccc;
+
+    font-size: 13px;
+}
+
+.card-valor strong {
+    color: #ffffff;
+
+    font-size: 19px;
+}
+
+
+/* ==========================================
+   Tabelas
+   ========================================== */
+
+.tabela-container {
+    margin-top: 20px;
+
+    overflow-x: auto;
+}
+
+.tabela {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 14px;
+}
+
+.tabela th {
+    padding: 10px;
+
+    background-color: #30353b;
+    color: #ffffff;
+
+    border: 1px solid #555b61;
+
+    text-align: left;
+}
+
+.tabela td {
+    padding: 10px;
+
+    background-color: #1f2327;
+    color: #ffffff;
+
+    border: 1px solid #454b51;
+}
+
+.tabela tr:nth-child(even) td {
+    background-color: #252a2f;
+}
+
+
+/* ==========================================
+   Checklist
+   ========================================== */
+
+.checklist {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+.checklist label {
+    padding: 10px;
+
+    background-color: #252a2f;
+    color: #ffffff;
+
+    border: 1px solid #484e54;
+    border-radius: 5px;
+
+    cursor: pointer;
+}
+
+.checklist input {
+    margin-right: 8px;
+}
+
+
+/* ==========================================
+   Responsividade
+   ========================================== */
+
+@media (max-width: 850px) {
+
+    .menu-lateral {
+        width: 260px;
+    }
+
+    .conteudo-principal {
+        margin-left: 260px;
+
+        padding: 15px;
+    }
+
+    .btn-menu {
+        left: 270px;
+    }
+
+    body.menu-fechado .conteudo-principal {
+        margin-left: 0;
+    }
+
+    body.menu-fechado .btn-menu {
+        left: 15px;
+    }
+
+    .conteudo {
+        padding: 20px;
+    }
+
+    .linha-formulario {
+        flex-direction: column;
+
+        gap: 0;
+    }
+
+    .resumo-patrimonial {
+        flex-direction: column;
+    }
+}
