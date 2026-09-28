@@ -1,743 +1,553 @@
-/* ==========================================
-   Estrutura Geral
-   ========================================== */
+/* ==============================================================
+   ARQUIVO: css/style.css
+   Estilos da interface do Assistente de Primeiras Declarações
+   ============================================================== */
 
+/* ==============================================================
+   CONFIGURAÇÃO GERAL
+   ============================================================== */
 * {
     box-sizing: border-box;
 }
-
+html {
+    scroll-behavior: smooth;
+}
 body {
     margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #101214;
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #101214;
     color: #f4f4f4;
 }
-
-.pagina {
-    min-height: 100vh;
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+button {
+    cursor: pointer;
+}
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
 }
 
-
-/* ==========================================
-   Menu Lateral
-   ========================================== */
-
+/* ==============================================================
+   MENU LATERAL
+   ============================================================== */
 .menu-lateral {
     position: fixed;
     top: 0;
     left: 0;
-
+    z-index: 20;
     width: 280px;
     height: 100vh;
-
-    background-color: #30353b;
-    color: #ffffff;
-
-    border-right: 1px solid #555b61;
-
-    padding: 25px 20px;
-
+    padding: 28px 22px;
     overflow-y: auto;
-
+    background: #4a5057;
+    border-right: 1px solid #697078;
     transition: transform 0.25s ease;
 }
-
 .menu-lateral h1 {
-    margin: 15px 0 6px 0;
-
-    color: #ffffff;
-
-    font-size: 21px;
-
-    text-align: center;
+    margin: 0 0 8px;
+    font-size: 20px;
+    line-height: 1.25;
+    letter-spacing: 0.5px;
 }
-
 .subtitulo {
-    margin-top: 8px;
-    margin-bottom: 20px;
-
-    color: #d1d1d1;
-
-    font-size: 12px;
-    line-height: 1.5;
-
-    text-align: center;
+    margin: 0 0 20px;
+    color: #e4e4e4;
+    font-size: 13px;
+    line-height: 1.45;
 }
-
 .status-api {
-    background-color: #3c4248;
-
-    border: 1px solid #646b72;
-    border-radius: 5px;
-
-    color: #ffffff;
-
-    padding: 9px 10px;
-
     margin-bottom: 20px;
-
-    font-size: 12px;
-
-    text-align: center;
+    padding: 10px 12px;
+    border: 1px solid #7b8188;
+    border-radius: 8px;
+    background: #3f444a;
+    font-size: 13px;
 }
-
-.status-api.online {
-    color: #9ee0ae;
-    border-color: #5f936b;
+.status-api.conectado {
+    border-color: #aeb9ae;
 }
-
-.status-api.offline {
-    color: #ffaaa5;
-    border-color: #a95c57;
+.status-api.desconectado {
+    border-color: #caa6a6;
 }
-
 .menu-etapas {
-    list-style: none;
-
     margin: 0;
     padding: 0;
+    list-style: none;
 }
-
 .item-menu {
-    padding: 10px;
-
     margin-bottom: 5px;
-
-    border-radius: 5px;
-
-    color: #ffffff;
-
+    padding: 11px 12px;
+    border-radius: 7px;
+    color: #efefef;
+    font-size: 14px;
+    line-height: 1.3;
     cursor: pointer;
-
-    transition: 0.2s;
+    transition: background 0.15s ease;
 }
-
 .item-menu:hover {
-    background-color: #484e54;
+    background: #5a6169;
 }
-
 .item-menu.ativa {
-    background-color: #ffffff;
-    color: #111111;
-
-    font-weight: bold;
+    background: #f4f4f4;
+    color: #151719;
+    font-weight: 700;
 }
-
 .resumo-lateral {
-    margin-top: 25px;
-    padding-top: 15px;
-
-    border-top: 1px solid #666c72;
+    margin-top: 22px;
+    padding: 15px;
+    border: 1px solid #727980;
+    border-radius: 9px;
+    background: #41464c;
 }
-
 .resumo-lateral h3 {
-    margin-top: 0;
-
-    color: #ffffff;
-
+    margin: 0 0 12px;
     font-size: 15px;
 }
-
 .resumo-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 8px;
-
-    color: #dcdcdc;
-
-    font-size: 13px;
-    line-height: 1.4;
+    font-size: 12px;
 }
-
 .resumo-item strong {
-    color: #ffffff;
+    text-align: right;
 }
-
 .btn-novo {
     width: 100%;
-
-    margin-top: 20px;
-
-    padding: 9px;
-
-    background-color: #ffffff;
-    color: #111111;
-
-    border: 1px solid #ffffff;
-    border-radius: 5px;
-
-    cursor: pointer;
+    margin-top: 16px;
+    padding: 11px 12px;
+    border: 1px solid #eeeeee;
+    border-radius: 7px;
+    background: transparent;
+    color: #ffffff;
 }
-
 .btn-novo:hover {
-    background-color: #dcdcdc;
+    background: #ffffff;
+    color: #151719;
 }
 
-
-/* ==========================================
-   Botão do Menu
-   ========================================== */
-
+/* ==============================================================
+   BOTÃO DO MENU
+   ============================================================== */
 .btn-menu {
     position: fixed;
-
-    top: 15px;
-    left: 295px;
-
-    width: 42px;
-    height: 42px;
-
-    z-index: 1000;
-
-    background-color: #ffffff;
-    color: #111111;
-
-    border: 1px solid #555555;
-    border-radius: 5px;
-
-    font-size: 23px;
-    font-weight: bold;
-
-    cursor: pointer;
-
+    top: 74px;
+    left: 268px;
+    z-index: 40;
+    width: 28px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid #747b82;
+    border-left: 0;
+    border-radius: 0 8px 8px 0;
+    background: #4a5057;
+    color: #ffffff;
+    font-size: 26px;
+    line-height: 1;
     transition: left 0.25s ease;
 }
-
-.btn-menu:hover {
-    background-color: #dcdcdc;
-}
-
-
-/* ==========================================
-   Menu Fechado
-   ========================================== */
-
-body.menu-fechado .menu-lateral {
+.menu-fechado .menu-lateral {
     transform: translateX(-100%);
 }
-
-body.menu-fechado .conteudo-principal {
-    margin-left: 0;
+.menu-fechado .btn-menu {
+    left: 0;
 }
 
-body.menu-fechado .btn-menu {
-    left: 15px;
-}
-
-
-/* ==========================================
-   Conteúdo Principal
-   ========================================== */
-
+/* ==============================================================
+   CONTEÚDO PRINCIPAL
+   ============================================================== */
 .conteudo-principal {
-    margin-left: 280px;
-
     min-height: 100vh;
-
-    padding: 40px;
-
-    background-color: #101214;
-
+    margin-left: 280px;
+    padding: 38px;
     transition: margin-left 0.25s ease;
 }
-
-.conteudo {
-    max-width: 1000px;
-
-    margin: 0 auto;
-
-    padding: 35px;
-
-    background-color: #1b1f23;
-    color: #f5f5f5;
-
-    border: 1px solid #3a4046;
-    border-radius: 8px;
-
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+.menu-fechado .conteudo-principal {
+    margin-left: 0;
 }
-
-
-/* ==========================================
-   Etapas
-   ========================================== */
-
+.conteudo {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+    padding: 30px;
+    border: 1px solid #34393f;
+    border-radius: 14px;
+    background: #1b1f23;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+}
 .etapa {
     display: none;
 }
-
 .etapa.ativa {
     display: block;
-
-    animation: entradaEtapa 0.2s ease;
 }
-
-@keyframes entradaEtapa {
-
-    from {
-        opacity: 0;
-        transform: translateX(8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+h2 {
+    margin: 0 0 8px;
+    font-size: 25px;
 }
-
-.etapa h2 {
+h3 {
     margin-top: 0;
-    margin-bottom: 8px;
-
-    color: #ffffff;
-
-    font-size: 22px;
 }
-
-.descricao-etapa {
-    margin-top: 5px;
-    margin-bottom: 20px;
-
-    color: #c7c7c7;
-
-    font-size: 14px;
-}
-
 .referencia-legal {
-    margin-bottom: 25px;
-
-    padding: 10px 12px;
-
-    background-color: #272c31;
-
-    border-left: 4px solid #ffffff;
-
-    color: #dddddd;
-
-    font-size: 14px;
-}
-
-
-/* ==========================================
-   Mensagens
-   ========================================== */
-
-.mensagem {
-    display: none;
-
-    padding: 10px 14px;
-
-    margin-bottom: 20px;
-
-    border-radius: 5px;
-
-    font-size: 14px;
-}
-
-.mensagem.sucesso {
-    display: block;
-
-    background-color: #183c23;
-
-    border: 1px solid #4f9d66;
-
-    color: #b8e8c5;
-}
-
-.mensagem.erro {
-    display: block;
-
-    background-color: #48201d;
-
-    border: 1px solid #b15c56;
-
-    color: #ffb8b3;
-}
-
-.mensagem.aviso {
-    display: block;
-
-    background-color: #413918;
-
-    border: 1px solid #9d8b41;
-
-    color: #f2dfa0;
-}
-
-
-/* ==========================================
-   Formulários
-   ========================================== */
-
-.grupo-formulario {
     margin-bottom: 18px;
-}
-
-.grupo-formulario label {
-    display: block;
-
-    margin-bottom: 6px;
-
-    color: #ffffff;
-
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.grupo-formulario input,
-.grupo-formulario select,
-.grupo-formulario textarea {
-    width: 100%;
-
-    padding: 10px;
-
-    background-color: #ffffff;
-    color: #111111;
-
-    border: 1px solid #888888;
-    border-radius: 5px;
-
-    font-family: Arial, sans-serif;
-    font-size: 15px;
-}
-
-.grupo-formulario input:focus,
-.grupo-formulario select:focus,
-.grupo-formulario textarea:focus {
-    outline: none;
-
-    background-color: #f1fff5;
-
-    border-color: #57aa70;
-
-    box-shadow: 0 0 0 2px rgba(87, 170, 112, 0.25);
-}
-
-.grupo-formulario textarea {
-    min-height: 90px;
-
-    resize: vertical;
-}
-
-.linha-formulario {
-    display: flex;
-
-    gap: 15px;
-}
-
-.linha-formulario .grupo-formulario {
-    flex: 1;
-}
-
-.formulario-bloco {
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-
-    border-bottom: 1px solid #444a50;
-}
-
-.formulario-bloco h3 {
-    color: #ffffff;
-}
-
-
-/* ==========================================
-   Botões
-   ========================================== */
-
-.botoes-formulario {
-    display: flex;
-
-    gap: 10px;
-
-    margin-top: 15px;
-
-    flex-wrap: wrap;
-}
-
-button {
-    font-family: Arial, sans-serif;
-}
-
-.btn-principal {
-    padding: 9px 18px;
-
-    background-color: #ffffff;
-    color: #111111;
-
-    border: 1px solid #ffffff;
-    border-radius: 5px;
-
-    cursor: pointer;
-}
-
-.btn-principal:hover {
-    background-color: #d7d7d7;
-}
-
-.btn-secundario {
-    padding: 9px 18px;
-
-    background-color: #292e33;
-    color: #ffffff;
-
-    border: 1px solid #777777;
-    border-radius: 5px;
-
-    cursor: pointer;
-}
-
-.btn-secundario:hover {
-    background-color: #3a4046;
-}
-
-.btn-excluir {
-    padding: 8px 12px;
-
-    background-color: #9f3934;
-    color: #ffffff;
-
-    border: none;
-    border-radius: 4px;
-
-    cursor: pointer;
-}
-
-.btn-excluir:hover {
-    background-color: #be4942;
-}
-
-.btn-editar {
-    padding: 8px 12px;
-
-    background-color: #c8942c;
-    color: #111111;
-
-    border: none;
-    border-radius: 4px;
-
-    cursor: pointer;
-}
-
-.btn-editar:hover {
-    background-color: #e1ad43;
-}
-
-
-/* ==========================================
-   Navegação
-   ========================================== */
-
-.navegacao {
-    display: flex;
-
-    justify-content: space-between;
-
-    margin-top: 30px;
-    padding-top: 20px;
-
-    border-top: 1px solid #444a50;
-}
-
-
-/* ==========================================
-   Cards
-   ========================================== */
-
-.lista-cards {
-    margin-top: 20px;
-}
-
-.card {
-    margin-bottom: 10px;
-
-    padding: 14px;
-
-    background-color: #252a2f;
-    color: #ffffff;
-
-    border: 1px solid #484e54;
-    border-left: 4px solid #ffffff;
-    border-radius: 5px;
-}
-
-.card h4 {
-    margin: 0 0 6px 0;
-
-    color: #ffffff;
-}
-
-.card p {
-    margin: 4px 0;
-
-    color: #d6d6d6;
-
-    font-size: 14px;
-}
-
-.card-acoes {
-    display: flex;
-
-    gap: 8px;
-
-    margin-top: 10px;
-}
-
-
-/* ==========================================
-   Resumo Patrimonial
-   ========================================== */
-
-.resumo-patrimonial {
-    display: flex;
-
-    gap: 12px;
-
-    margin-bottom: 25px;
-
-    flex-wrap: wrap;
-}
-
-.card-valor {
-    flex: 1;
-
-    min-width: 180px;
-
-    padding: 15px;
-
-    background-color: #252a2f;
-
-    border: 1px solid #484e54;
-    border-radius: 6px;
-}
-
-.card-valor span {
-    display: block;
-
-    margin-bottom: 5px;
-
-    color: #cccccc;
-
+    color: #b9bec4;
     font-size: 13px;
 }
+.descricao-etapa {
+    margin: 0 0 24px;
+    color: #c7cbd0;
+    line-height: 1.55;
+}
+.formulario-bloco {
+    margin-bottom: 32px;
+    padding: 22px;
+    border: 1px solid #363c42;
+    border-radius: 10px;
+    background: #171a1d;
+}
 
-.card-valor strong {
+/* ==============================================================
+   FORMULÁRIOS
+   ============================================================== */
+.grupo-formulario {
+    width: 100%;
+    margin-bottom: 18px;
+}
+.linha-formulario {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+label {
+    display: block;
+    margin-bottom: 7px;
+    color: #eeeeee;
+    font-size: 14px;
+    font-weight: 600;
+}
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid #c7c7c7;
+    border-radius: 7px;
+    outline: none;
+    background: #ffffff;
+    color: #111111;
+}
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #5d6873;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+.botoes-formulario {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+.btn-principal,
+.btn-secundario,
+.btn-editar,
+.btn-excluir {
+    padding: 10px 16px;
+    border-radius: 7px;
+    font-weight: 700;
+}
+.btn-principal {
+    border: 1px solid #ffffff;
+    background: #ffffff;
+    color: #111315;
+}
+.btn-principal:hover {
+    background: #dedede;
+}
+.btn-secundario,
+.btn-editar {
+    border: 1px solid #7d858d;
+    background: #30363c;
     color: #ffffff;
-
-    font-size: 19px;
+}
+.btn-secundario:hover,
+.btn-editar:hover {
+    background: #41484f;
+}
+.btn-excluir {
+    border: 1px solid #8f6767;
+    background: #382829;
+    color: #ffffff;
+}
+.btn-excluir:hover {
+    background: #4a3133;
 }
 
-
-/* ==========================================
-   Tabelas
-   ========================================== */
-
-.tabela-container {
+/* ==============================================================
+   CARDS E LISTAS
+   ============================================================== */
+.lista-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 14px;
     margin-top: 20px;
-
-    overflow-x: auto;
+}
+.card {
+    padding: 18px;
+    border: 1px solid #3c4248;
+    border-radius: 9px;
+    background: #24292e;
+}
+.card-destaque {
+    border-color: #727b84;
+}
+.card h4 {
+    margin: 0 0 12px;
+    font-size: 17px;
+}
+.card p {
+    margin: 6px 0;
+    color: #d1d4d7;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.card-acoes {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+.card-acoes button {
+    padding: 8px 12px;
+    font-size: 12px;
 }
 
+/* ==============================================================
+   RESUMOS DE VALORES
+   ============================================================== */
+.resumo-patrimonial {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin: 22px 0;
+}
+.card-valor {
+    padding: 18px;
+    border: 1px solid #3a4046;
+    border-radius: 9px;
+    background: #24292e;
+}
+.card-valor span {
+    display: block;
+    margin-bottom: 9px;
+    color: #bcc1c6;
+    font-size: 12px;
+}
+.card-valor strong {
+    display: block;
+    font-size: 21px;
+}
+
+/* ==============================================================
+   TABELAS
+   ============================================================== */
+.tabela-container {
+    width: 100%;
+    margin-top: 22px;
+    overflow-x: auto;
+    border: 1px solid #383e44;
+    border-radius: 9px;
+}
 .tabela {
     width: 100%;
-
     border-collapse: collapse;
-
-    font-size: 14px;
+    background: #20252a;
 }
-
-.tabela th {
-    padding: 10px;
-
-    background-color: #30353b;
-    color: #ffffff;
-
-    border: 1px solid #555b61;
-
-    text-align: left;
-}
-
+.tabela th,
 .tabela td {
-    padding: 10px;
-
-    background-color: #1f2327;
+    padding: 13px 14px;
+    border-bottom: 1px solid #383e44;
+    text-align: left;
+    font-size: 13px;
+}
+.tabela th {
+    background: #2b3137;
     color: #ffffff;
-
-    border: 1px solid #454b51;
+}
+.tabela tr:last-child td {
+    border-bottom: 0;
+}
+.tabela-vazia {
+    color: #aeb4ba;
+    text-align: center !important;
 }
 
-.tabela tr:nth-child(even) td {
-    background-color: #252a2f;
-}
-
-
-/* ==========================================
-   Checklist
-   ========================================== */
-
-.checklist {
-    display: flex;
-
-    flex-direction: column;
-
+/* ==============================================================
+   DOCUMENTOS
+   ============================================================== */
+.lista-documentos {
+    display: grid;
     gap: 10px;
+    margin-top: 20px;
 }
-
-.checklist label {
-    padding: 10px;
-
-    background-color: #252a2f;
-    color: #ffffff;
-
-    border: 1px solid #484e54;
-    border-radius: 5px;
-
+.lista-documentos label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px;
+    border: 1px solid #373d43;
+    border-radius: 8px;
+    background: #22272c;
+    font-weight: 400;
+}
+.lista-documentos input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    accent-color: #ffffff;
     cursor: pointer;
 }
 
-.checklist input {
-    margin-right: 8px;
+/* ==============================================================
+   CHECKBOXES
+   ============================================================== */
+.checklist {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 10px 0 18px;
+}
+.checklist label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: auto;
+    margin: 0;
+    padding: 8px 10px;
+    border: 1px solid #3c4248;
+    border-radius: 7px;
+    background: #24292e;
+    color: #eeeeee;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.checklist input[type="checkbox"] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    margin: 0;
+    padding: 0;
+    border: 2px solid #aeb4ba;
+    border-radius: 4px;
+    background: #ffffff;
+    cursor: pointer;
+    position: relative;
+}
+.checklist input[type="checkbox"]:checked {
+    border-color: #ffffff;
+    background: #ffffff;
+}
+.checklist input[type="checkbox"]:checked::after {
+    content: "✓";
+    position: absolute;
+    top: -4px;
+    left: 2px;
+    color: #111111;
+    font-size: 18px;
+    font-weight: 700;
 }
 
+/* ==============================================================
+   MENSAGENS
+   ============================================================== */
+.mensagem {
+    display: none;
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 7px;
+    font-size: 14px;
+}
+.mensagem.visivel {
+    display: block;
+}
+.mensagem.sucesso {
+    border: 1px solid #667768;
+    background: #263229;
+}
+.mensagem.erro {
+    border: 1px solid #8a6262;
+    background: #382829;
+}
 
-/* ==========================================
-   Responsividade
-   ========================================== */
+/* ==============================================================
+   NAVEGAÇÃO
+   ============================================================== */
+.navegacao {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 34px;
+    padding-top: 22px;
+    border-top: 1px solid #373d43;
+}
+.resultado-itd {
+    margin-top: 18px;
+}
 
+/* ==============================================================
+   RESPONSIVIDADE
+   ============================================================== */
 @media (max-width: 850px) {
-
     .menu-lateral {
         width: 260px;
     }
-
+    .btn-menu {
+        left: 248px;
+    }
     .conteudo-principal {
         margin-left: 260px;
-
-        padding: 15px;
+        padding: 22px;
     }
-
-    .btn-menu {
-        left: 270px;
+    .menu-fechado .btn-menu {
+        left: 0;
     }
-
-    body.menu-fechado .conteudo-principal {
-        margin-left: 0;
-    }
-
-    body.menu-fechado .btn-menu {
-        left: 15px;
-    }
-
-    .conteudo {
-        padding: 20px;
-    }
-
     .linha-formulario {
-        flex-direction: column;
-
+        grid-template-columns: 1fr;
         gap: 0;
     }
-
-    .resumo-patrimonial {
-        flex-direction: column;
+}
+@media (max-width: 650px) {
+    .menu-lateral {
+        width: 85vw;
+        max-width: 300px;
+    }
+    .btn-menu {
+        left: calc(85vw - 12px);
+    }
+    .conteudo-principal {
+        margin-left: 0;
+        padding: 14px;
+    }
+    .conteudo {
+        padding: 20px 16px;
+    }
+    body:not(.menu-fechado) .conteudo-principal {
+        filter: brightness(0.55);
+    }
+    .menu-fechado .btn-menu {
+        left: 0;
     }
 }

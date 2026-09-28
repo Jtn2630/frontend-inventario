@@ -1,106 +1,347 @@
-/* ==========================================
-   Variáveis Principais
-   ========================================== */
+/* ==============================================================
+   ARQUIVO: js/app.js
+   Controle da interface e integração com a API
+   ============================================================== */
 
+/* ==============================================================
+   VARIÁVEIS GLOBAIS
+   ============================================================== */
 let etapaAtual = 0;
-let totalEtapas = 9;
-
-let falecidoId = localStorage.getItem("falecidoId");
+const totalEtapas = 9;
+let falecidoId = null;
 let inventarioAtual = null;
+let semDividasMarcado = false;
 
+/* ==============================================================
+   INICIALIZAÇÃO DA APLICAÇÃO
+   ============================================================== */
+document.addEventListener("DOMContentLoaded", iniciarAplicacao);
 
-/* ==========================================
-   Inicialização
-   ========================================== */
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    configurarEventos();
-
-    testarConexaoApi();
-
+async function iniciarAplicacao() {
+    registrarEventos();
+    inicializarCamposMoeda();
     mostrarEtapa(0);
+    await verificarConexao();
+    await atualizarListaInventarios();
+}
 
-    if (falecidoId) {
-        carregarInventario();
+/* ==============================================================
+   REGISTRO DE EVENTOS
+   ============================================================== */
+function registrarEvento(id, evento, funcao) {
+    const elemento = document.getElementById(id);
+    if (elemento) {
+        elemento.addEventListener(evento, funcao);
     }
-});
+}
 
-
-/* ==========================================
-   Eventos da Página
-   ========================================== */
-
-function configurarEventos() {
-
-    document.getElementById("form-falecido")
-        .addEventListener("submit", salvarFalecido);
-
-    document.getElementById("form-conjuge")
-        .addEventListener("submit", salvarConjuge);
-
-    document.getElementById("form-herdeiro")
-        .addEventListener("submit", salvarHerdeiro);
-
-    document.getElementById("form-bem")
-        .addEventListener("submit", salvarBem);
-
-    document.getElementById("form-divida")
-        .addEventListener("submit", salvarDivida);
-
-    document.getElementById("btn-anterior")
-        .addEventListener("click", etapaAnterior);
-
-    document.getElementById("btn-proximo")
-        .addEventListener("click", proximaEtapa);
-
-    document.getElementById("btn-novo")
-        .addEventListener("click", novoInventario);
-
-    document.getElementById("btn-menu")
-        .addEventListener("click", alternarMenu);
-
-    document.getElementById("btn-excluir-conjuge")
-        .addEventListener("click", removerConjuge);
-
-    document.getElementById("bem-condominio")
-        .addEventListener("change", alterarCampoCondominio);
-
-    document.getElementById("btn-itd")
-        .addEventListener("click", calcularITD);
+function registrarEventos() {
+    registrarEvento("btn-menu", "click", alternarMenu);
+    registrarEvento("btn-anterior", "click", etapaAnterior);
+    registrarEvento("btn-proximo", "click", proximaEtapa);
+    registrarEvento("btn-novo", "click", novoInventario);
+    registrarEvento("btn-carregar-inventario", "click", carregarInventarioSalvo);
+    registrarEvento("btn-calcular-meacao", "click", calcularMeacao);
+    registrarEvento("btn-calcular-itd", "click", calcularITD);
+    registrarEvento("btn-excluir-conjuge", "click", removerConjugeAtual);
+    registrarEvento("form-falecido", "submit", salvarFalecido);
+    registrarEvento("form-conjuge", "submit", salvarConjuge);
+    registrarEvento("form-herdeiro", "submit", salvarHerdeiro);
+    registrarEvento("form-bem", "submit", salvarBem);
+    registrarEvento("form-divida", "submit", salvarDivida);
+    registrarEvento("falecido-regime", "change", alterarCampoParticipacao);
+    registrarEvento("bem-condominio", "change", alterarCampoCondominio);
+    registrarEvento("conjuge-mesmo-endereco", "change", alterarEnderecoConjuge);
+    registrarEvento("herdeiro-mesmo-endereco", "change", alterarEnderecoHerdeiro);
+    registrarEvento("divida-sem-dividas", "change", alterarSemDividas);
 
     document.querySelectorAll(".item-menu").forEach(function (item) {
-
         item.addEventListener("click", function () {
+            mostrarEtapa(Number(item.dataset.etapa));
+        });
+    });
 
-            let numero = Number(item.dataset.etapa);
+    registrarMascarasCPF();
+    registrarMascarasMoeda();
+}
 
-            mostrarEtapa(numero);
+/* ==============================================================
+   MÁSCARA DE CPF
+   ============================================================== */
+function registrarMascarasCPF() {
+    ["falecido-cpf", "conjuge-cpf", "herdeiro-cpf"].forEach(function (id) {
+        const campo = document.getElementById(id);
+        if (!campo) {
+            return;
+        }
+        campo.addEventListener("input", function () {
+            campo.value = formatarCPF(campo.value);
         });
     });
 }
 
+function somenteNumeros(valor) {
+    return String(valor ?? "").replace(/\D/g, "");
+}
 
-/* ==========================================
-   Navegação
-   ========================================== */
+function formatarCPF(valor) {
+    const numeros = somenteNumeros(valor).slice(0, 11);
+    if (numeros.length <= 3) {
+        return numeros;
+    }
+    if (numeros.length <= 6) {
+        return numeros.slice(0, 3) + "." + numeros.slice(3);
+    }
+    if (numeros.length <= 9) {
+        return numeros.slice(0, 3) + "." + numeros.slice(3, 6) + "." + numeros.slice(6);
+    }
+    return (
+        numeros.slice(0, 3) +
+        "." +
+        numeros.slice(3, 6) +
+        "." +
+        numeros.slice(6, 9) +
+        "-" +
+        numeros.slice(9, 11)
+    );
+}
 
-function mostrarEtapa(numero) {
+function cpfParaApi(valor) {
+    const numeros = somenteNumeros(valor);
+    return numeros === "" ? null : numeros;
+}
 
-    if (numero > 0 && !falecidoId) {
+/* ==============================================================
+   MÁSCARA DE MOEDA
+   ============================================================== */
+function inicializarCamposMoeda() {
+    ["bem-valor", "divida-valor"].forEach(function (id) {
+        const campo = document.getElementById(id);
+        if (campo && !campo.value) {
+            campo.value = "R$ 0,00";
+        }
+    });
+}
 
-        mostrarMensagem(
-            "Cadastre primeiro os dados da autoria da herança.",
-            "aviso"
-        );
+function registrarMascarasMoeda() {
+    ["bem-valor", "divida-valor"].forEach(function (id) {
+        const campo = document.getElementById(id);
+        if (!campo) {
+            return;
+        }
 
+        campo.addEventListener("focus", function () {
+            if (!campo.value) {
+                campo.value = "R$ 0,00";
+            }
+            posicionarCursorAntesDaVirgula(campo);
+        });
+
+        campo.addEventListener("click", function () {
+            posicionarCursorAntesDaVirgula(campo);
+        });
+
+        campo.addEventListener("input", function () {
+            aplicarMascaraMoeda(campo);
+            posicionarCursorAntesDaVirgula(campo);
+        });
+
+        campo.addEventListener("blur", function () {
+            const valor = converterMoedaParaNumero(campo.value);
+            campo.value = formatarMoeda(valor || 0);
+        });
+    });
+}
+
+function posicionarCursorAntesDaVirgula(campo) {
+    const posicaoVirgula = campo.value.indexOf(",");
+    if (posicaoVirgula < 0) {
+        return;
+    }
+    window.requestAnimationFrame(function () {
+        try {
+            campo.setSelectionRange(posicaoVirgula, posicaoVirgula);
+        } catch {
+            return;
+        }
+    });
+}
+
+function aplicarMascaraMoeda(campo) {
+    let texto = String(campo.value ?? "")
+        .replace(/R\$/g, "")
+        .trim();
+
+    if (texto === "") {
+        campo.value = "R$ 0,00";
         return;
     }
 
+    const partes = texto.split(",");
+    let parteInteira = partes[0]
+        .replace(/\./g, "")
+        .replace(/\D/g, "");
+
+    if (parteInteira === "") {
+        parteInteira = "0";
+    }
+
+    parteInteira = parteInteira.replace(/^0+(?=\d)/, "");
+
+    const inteiroFormatado = Number(parteInteira).toLocaleString("pt-BR");
+    campo.value = "R$ " + inteiroFormatado + ",00";
+}
+
+function converterMoedaParaNumero(valor) {
+    if (valor === null || valor === undefined) {
+        return null;
+    }
+
+    let texto = String(valor)
+        .trim()
+        .replace(/R\$/g, "")
+        .replace(/\s/g, "");
+
+    if (texto === "") {
+        return null;
+    }
+
+    texto = texto
+        .replace(/\./g, "")
+        .replace(",", ".")
+        .replace(/[^0-9.-]/g, "");
+
+    const numero = Number(texto);
+    return Number.isNaN(numero) ? null : numero;
+}
+
+function formatarMoeda(valor) {
+    return Number(valor || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
+}
+
+/* ==============================================================
+   FUNÇÕES AUXILIARES
+   ============================================================== */
+function valorOuNull(valor) {
+    const texto = String(valor ?? "").trim();
+    return texto === "" ? null : texto;
+}
+
+function numeroOuNull(valor) {
+    if (valor === "" || valor === null || valor === undefined) {
+        return null;
+    }
+    const numero = Number(valor);
+    return Number.isNaN(numero) ? null : numero;
+}
+
+function booleanoOuNull(valor) {
+    if (valor === "true") {
+        return true;
+    }
+    if (valor === "false") {
+        return false;
+    }
+    return null;
+}
+
+function formatarPercentual(valor) {
+    return Number(valor || 0).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }) + "%";
+}
+
+function formatarData(valor) {
+    if (!valor) {
+        return "-";
+    }
+    const partes = String(valor).split("-");
+    if (partes.length !== 3) {
+        return valor;
+    }
+    return partes[2] + "/" + partes[1] + "/" + partes[0];
+}
+
+function escaparHtml(valor) {
+    return String(valor ?? "").replace(/[&<>"']/g, function (caractere) {
+        const mapa = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        };
+        return mapa[caractere];
+    });
+}
+
+function nomeRegime(valor) {
+    const regimes = {
+        comunhao_universal: "Comunhão Universal",
+        comunhao_parcial: "Comunhão Parcial",
+        separacao_convencional: "Separação Total / Convencional",
+        separacao_obrigatoria: "Separação Obrigatória",
+        participacao_final_aquestos: "Participação Final nos Aquestos"
+    };
+    return regimes[valor] || "Não informado";
+}
+
+function nomeParentesco(valor) {
+    const parentescos = {
+        filho: "Filho(a)",
+        neto: "Neto(a)",
+        pai: "Pai",
+        mae: "Mãe",
+        avo: "Avô / Avó",
+        irmao: "Irmão / Irmã",
+        sobrinho: "Sobrinho(a)"
+    };
+    return parentescos[valor] || valor || "Não informado";
+}
+
+function exigirFalecido() {
+    if (falecidoId) {
+        return true;
+    }
+    mostrarMensagem("Salve primeiro os dados do falecido.", "erro");
+    mostrarEtapa(0);
+    return false;
+}
+
+function obterEnderecoFalecido() {
+    return (
+        inventarioAtual?.deceased?.last_address ||
+        valorOuNull(document.getElementById("falecido-endereco").value)
+    );
+}
+
+/* ==============================================================
+   CONEXÃO COM A API
+   ============================================================== */
+async function verificarConexao() {
+    const status = document.getElementById("status-api");
+    try {
+        await verificarApi();
+        status.textContent = "API conectada";
+        status.className = "status-api conectado";
+    } catch (erro) {
+        console.error(erro);
+        status.textContent = "API não conectada";
+        status.className = "status-api desconectado";
+    }
+}
+
+/* ==============================================================
+   NAVEGAÇÃO ENTRE ETAPAS
+   ============================================================== */
+function mostrarEtapa(numero) {
     if (numero < 0) {
         numero = 0;
     }
-
     if (numero >= totalEtapas) {
         numero = totalEtapas - 1;
     }
@@ -108,345 +349,174 @@ function mostrarEtapa(numero) {
     etapaAtual = numero;
 
     document.querySelectorAll(".etapa").forEach(function (etapa) {
-        etapa.classList.remove("ativa");
+        etapa.classList.toggle(
+            "ativa",
+            Number(etapa.dataset.etapa) === etapaAtual
+        );
     });
 
     document.querySelectorAll(".item-menu").forEach(function (item) {
-        item.classList.remove("ativa");
+        item.classList.toggle(
+            "ativa",
+            Number(item.dataset.etapa) === etapaAtual
+        );
     });
 
-    let etapa = document.querySelector(
-        '.etapa[data-etapa="' + numero + '"]'
-    );
+    const anterior = document.getElementById("btn-anterior");
+    const proximo = document.getElementById("btn-proximo");
 
-    let menu = document.querySelector(
-        '.item-menu[data-etapa="' + numero + '"]'
-    );
-
-    if (etapa) {
-        etapa.classList.add("ativa");
+    if (anterior) {
+        anterior.style.visibility = etapaAtual === 0 ? "hidden" : "visible";
     }
 
-    if (menu) {
-        menu.classList.add("ativa");
+    if (proximo) {
+        proximo.textContent =
+            etapaAtual === totalEtapas - 1
+                ? "Finalizar"
+                : "Avançar";
     }
 
-    document.getElementById("btn-anterior").style.visibility =
-        numero === 0 ? "hidden" : "visible";
-
-    document.getElementById("btn-proximo").textContent =
-        numero === totalEtapas - 1
-            ? "Finalizar"
-            : "Avançar";
-
-    if (numero >= 4 && inventarioAtual) {
-        atualizarTelasDeResumo();
-    }
-
-    limparMensagem();
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
-
 function proximaEtapa() {
-
     if (etapaAtual === totalEtapas - 1) {
-
-        mostrarMensagem(
-            "Preenchimento concluído. Confira os dados antes da utilização.",
-            "sucesso"
-        );
-
+        finalizarInventario();
         return;
     }
-
     mostrarEtapa(etapaAtual + 1);
 }
 
-
 function etapaAnterior() {
-
     mostrarEtapa(etapaAtual - 1);
 }
 
-
 function alternarMenu() {
-
     document.body.classList.toggle("menu-fechado");
 
-    let botao = document.getElementById("btn-menu");
-
-    if (document.body.classList.contains("menu-fechado")) {
-
-        botao.textContent = "☰";
-
-    } else {
-
-        botao.textContent = "×";
+    const botao = document.getElementById("btn-menu");
+    if (botao) {
+        botao.textContent =
+            document.body.classList.contains("menu-fechado")
+                ? "›"
+                : "‹";
     }
 }
 
-
-/* ==========================================
-   Conexão com a API
-   ========================================== */
-
-async function testarConexaoApi() {
-
-    let elemento = document.getElementById("status-api");
-
-    try {
-
-        await verificarApi();
-
-        elemento.textContent = "API conectada";
-
-        elemento.className = "status-api online";
-
-    } catch {
-
-        elemento.textContent = "API não conectada";
-
-        elemento.className = "status-api offline";
+/* ==============================================================
+   MENSAGENS DA INTERFACE
+   ============================================================== */
+function mostrarMensagem(texto, tipo = "sucesso") {
+    const mensagem = document.getElementById("mensagem-geral");
+    if (!mensagem) {
+        return;
     }
-}
-
-
-/* ==========================================
-   Mensagens
-   ========================================== */
-
-function mostrarMensagem(texto, tipo) {
-
-    let mensagem =
-        document.getElementById("mensagem-geral");
-
     mensagem.textContent = texto;
-
-    mensagem.className =
-        "mensagem " + tipo;
+    mensagem.className = "mensagem " + tipo + " visivel";
 }
 
+/* ==============================================================
+   INVENTÁRIOS SALVOS
+   ============================================================== */
+async function atualizarListaInventarios() {
+    const seletor = document.getElementById("inventario-anterior");
 
-function limparMensagem() {
-
-    let mensagem =
-        document.getElementById("mensagem-geral");
-
-    mensagem.textContent = "";
-
-    mensagem.className = "mensagem";
-}
-
-
-/* ==========================================
-   Funções Auxiliares
-   ========================================== */
-
-function valorOuNull(valor) {
-
-    if (
-        valor === undefined ||
-        valor === null ||
-        valor.trim() === ""
-    ) {
-        return null;
-    }
-
-    return valor.trim();
-}
-
-
-function numeroOuNull(valor) {
-
-    if (
-        valor === undefined ||
-        valor === null ||
-        valor === ""
-    ) {
-        return null;
-    }
-
-    return Number(valor);
-}
-
-
-function booleanoOuNull(valor) {
-
-    if (valor === "") {
-        return null;
-    }
-
-    return valor === "true";
-}
-
-
-function confirmarCamposVazios(formulario) {
-
-    let campos = formulario.querySelectorAll(
-        "input:not([type='hidden']), select, textarea"
-    );
-
-    let existeVazio = false;
-
-    campos.forEach(function (campo) {
-
-        if (
-            !campo.disabled &&
-            campo.offsetParent !== null &&
-            campo.value.trim() === ""
-        ) {
-            existeVazio = true;
-        }
-    });
-
-    if (!existeVazio) {
-        return true;
-    }
-
-    return confirm(
-        "O usuário não preencheu todos os campos. Deseja continuar?"
-    );
-}
-
-
-function formatarMoeda(valor) {
-
-    let numero = Number(valor || 0);
-
-    return numero.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL"
-    });
-}
-
-
-function formatarData(data) {
-
-    if (!data) {
-        return "-";
-    }
-
-    let partes = data.split("-");
-
-    if (partes.length !== 3) {
-        return data;
-    }
-
-    return partes[2] + "/" + partes[1] + "/" + partes[0];
-}
-
-
-function escaparHtml(texto) {
-
-    if (
-        texto === null ||
-        texto === undefined
-    ) {
-        return "";
-    }
-
-    return String(texto)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-
-/* ==========================================
-   Falecido
-   ========================================== */
-
-async function salvarFalecido(evento) {
-
-    evento.preventDefault();
-
-    let formulario =
-        document.getElementById("form-falecido");
-
-    if (!confirmarCamposVazios(formulario)) {
+    if (!seletor) {
         return;
     }
 
-    let dados = {
-
-        name:
-            valorOuNull(
-                document.getElementById("falecido-nome").value
-            ),
-
-        date_of_death:
-            valorOuNull(
-                document.getElementById("falecido-data").value
-            ),
-
-        cpf:
-            valorOuNull(
-                document.getElementById("falecido-cpf").value
-            ),
-
-        identity_document:
-            valorOuNull(
-                document.getElementById("falecido-identidade").value
-            ),
-
-        last_address:
-            valorOuNull(
-                document.getElementById("falecido-endereco").value
-            ),
-
-        marital_status:
-            valorOuNull(
-                document.getElementById("falecido-estado-civil").value
-            ),
-
-        property_regime:
-            valorOuNull(
-                document.getElementById("falecido-regime").value
-            ),
-
-        has_will:
-            booleanoOuNull(
-                document.getElementById("falecido-testamento").value
-            )
-    };
-
+    seletor.innerHTML =
+        '<option value="">Selecione um inventário</option>';
 
     try {
+        const inventarios = await buscarFalecidos();
 
-        let resposta;
+        if (!Array.isArray(inventarios)) {
+            throw new Error("A API não retornou uma lista.");
+        }
+
+        inventarios.forEach(function (falecido) {
+            const option = document.createElement("option");
+            option.value = String(falecido.id);
+            option.textContent =
+                (falecido.name || "Inventário sem nome") +
+                " - ID " +
+                falecido.id;
+
+            seletor.appendChild(option);
+        });
 
         if (falecidoId) {
+            seletor.value = String(falecidoId);
+        }
+    } catch (erro) {
+        console.error(erro);
+        mostrarMensagem(
+            "Erro ao carregar inventários: " + erro.message,
+            "erro"
+        );
+    }
+}
 
-            resposta =
-                await atualizarFalecido(
-                    falecidoId,
-                    dados
-                );
+async function carregarInventarioSalvo() {
+    const seletor = document.getElementById("inventario-anterior");
+    const id = seletor.value;
 
+    if (!id) {
+        mostrarMensagem(
+            "Selecione um inventário salvo.",
+            "aviso"
+        );
+        return;
+    }
+
+    falecidoId = Number(id);
+    semDividasMarcado = false;
+
+    await carregarInventario();
+    mostrarEtapa(0);
+}
+
+/* ==============================================================
+   FALECIDO
+   ============================================================== */
+async function salvarFalecido(evento) {
+    evento.preventDefault();
+
+    const dados = {
+        name: valorOuNull(document.getElementById("falecido-nome").value),
+        date_of_death: valorOuNull(document.getElementById("falecido-data").value),
+        cpf: cpfParaApi(document.getElementById("falecido-cpf").value),
+        identity_document: valorOuNull(document.getElementById("falecido-identidade").value),
+        last_address: valorOuNull(document.getElementById("falecido-endereco").value),
+        marital_status: valorOuNull(document.getElementById("falecido-estado-civil").value),
+        property_regime: valorOuNull(document.getElementById("falecido-regime").value),
+        has_will: booleanoOuNull(document.getElementById("falecido-testamento").value)
+    };
+
+    try {
+        if (falecidoId) {
+            await atualizarFalecido(
+                falecidoId,
+                dados
+            );
         } else {
-
-            resposta =
+            const resposta =
                 await cadastrarFalecido(dados);
 
             falecidoId = resposta.id;
-
-            localStorage.setItem(
-                "falecidoId",
-                falecidoId
-            );
         }
 
-        mostrarMensagem(
-            "Dados da autoria da herança salvos com sucesso.",
-            "sucesso"
-        );
-
         await carregarInventario();
+        await atualizarListaInventarios();
 
+        mostrarMensagem(
+            "Dados do falecido salvos com sucesso."
+        );
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -454,81 +524,65 @@ async function salvarFalecido(evento) {
     }
 }
 
+function editarFalecido() {
+    mostrarEtapa(0);
 
-/* ==========================================
-   Cônjuge
-   ========================================== */
+    document
+        .getElementById("form-falecido")
+        .scrollIntoView({
+            behavior: "smooth"
+        });
+}
 
+/* ==============================================================
+   CÔNJUGE OU COMPANHEIRO
+   ============================================================== */
 async function salvarConjuge(evento) {
-
     evento.preventDefault();
 
-    if (!falecidoId) {
+    if (!exigirFalecido()) {
         return;
     }
 
-    let formulario =
-        document.getElementById("form-conjuge");
+    const id = document.getElementById("conjuge-id").value;
+    const regime = document.getElementById("falecido-regime").value;
+    const mesmoEndereco =
+        document.getElementById("conjuge-mesmo-endereco").checked;
 
-    if (!confirmarCamposVazios(formulario)) {
-        return;
-    }
-
-    let conjugeId =
-        document.getElementById("conjuge-id").value;
-
-    let dados = {
-
-        deceased_id:
-            Number(falecidoId),
-
-        name:
-            valorOuNull(
-                document.getElementById("conjuge-nome").value
-            ),
-
-        cpf:
-            valorOuNull(
-                document.getElementById("conjuge-cpf").value
-            ),
-
-        identity_document:
-            valorOuNull(
-                document.getElementById("conjuge-identidade").value
-            ),
-
-        address:
-            valorOuNull(
-                document.getElementById("conjuge-endereco").value
-            )
+    const dados = {
+        deceased_id: Number(falecidoId),
+        name: valorOuNull(document.getElementById("conjuge-nome").value),
+        cpf: cpfParaApi(document.getElementById("conjuge-cpf").value),
+        identity_document: valorOuNull(document.getElementById("conjuge-identidade").value),
+        address: mesmoEndereco
+            ? obterEnderecoFalecido()
+            : valorOuNull(document.getElementById("conjuge-endereco").value),
+        marriage_date: valorOuNull(document.getElementById("conjuge-data-casamento").value),
+        participation_percentage:
+            regime === "participacao_final_aquestos"
+                ? numeroOuNull(document.getElementById("conjuge-participacao").value)
+                : null
     };
 
-
     try {
-
-        if (conjugeId) {
-
+        if (id) {
             delete dados.deceased_id;
-
             await atualizarConjuge(
-                conjugeId,
+                id,
                 dados
             );
-
         } else {
-
-            await cadastrarConjuge(dados);
+            await cadastrarConjuge(
+                dados
+            );
         }
 
-        mostrarMensagem(
-            "Cônjuge salvo com sucesso.",
-            "sucesso"
-        );
-
         await carregarInventario();
 
+        mostrarMensagem(
+            "Cônjuge salvo com sucesso."
+        );
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -536,45 +590,58 @@ async function salvarConjuge(evento) {
     }
 }
 
+function alterarCampoParticipacao() {
+    const campo = document.getElementById("campo-participacao");
+    const regime = document.getElementById("falecido-regime").value;
 
-async function removerConjuge() {
+    campo.style.display =
+        regime === "participacao_final_aquestos"
+            ? "block"
+            : "none";
+}
 
-    let id =
-        document.getElementById("conjuge-id").value;
+function alterarEnderecoConjuge() {
+    const checkbox = document.getElementById("conjuge-mesmo-endereco");
+    const campo = document.getElementById("conjuge-endereco");
+
+    if (checkbox.checked) {
+        campo.value = obterEnderecoFalecido() || "";
+        campo.disabled = true;
+    } else {
+        campo.disabled = false;
+    }
+}
+
+function editarConjuge() {
+    mostrarEtapa(1);
+
+    document
+        .getElementById("form-conjuge")
+        .scrollIntoView({
+            behavior: "smooth"
+        });
+}
+
+async function removerConjugeAtual() {
+    const id = document.getElementById("conjuge-id").value;
 
     if (!id) {
+        mostrarMensagem(
+            "Não há cônjuge cadastrado para excluir.",
+            "erro"
+        );
         return;
     }
 
-    if (
-        !confirm(
-            "Deseja excluir o cônjuge cadastrado?"
-        )
-    ) {
+    if (!confirm("Deseja excluir o cônjuge cadastrado?")) {
         return;
     }
 
     try {
-
         await excluirConjuge(id);
-
-        document
-            .getElementById("form-conjuge")
-            .reset();
-
-        document
-            .getElementById("conjuge-id")
-            .value = "";
-
         await carregarInventario();
-
-        mostrarMensagem(
-            "Cônjuge excluído.",
-            "sucesso"
-        );
-
+        mostrarMensagem("Cônjuge excluído.");
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -582,88 +649,55 @@ async function removerConjuge() {
     }
 }
 
-
-/* ==========================================
-   Herdeiros
-   ========================================== */
-
+/* ==============================================================
+   HERDEIROS
+   ============================================================== */
 async function salvarHerdeiro(evento) {
-
     evento.preventDefault();
 
-    let formulario =
-        document.getElementById("form-herdeiro");
-
-    if (!confirmarCamposVazios(formulario)) {
+    if (!exigirFalecido()) {
         return;
     }
 
-    let id =
-        document.getElementById("herdeiro-id").value;
+    const formulario = document.getElementById("form-herdeiro");
+    const id = document.getElementById("herdeiro-id").value;
+    const mesmoEndereco =
+        document.getElementById("herdeiro-mesmo-endereco").checked;
 
-    let dados = {
-
-        deceased_id:
-            Number(falecidoId),
-
-        name:
-            valorOuNull(
-                document.getElementById("herdeiro-nome").value
-            ),
-
-        cpf:
-            valorOuNull(
-                document.getElementById("herdeiro-cpf").value
-            ),
-
-        identity_document:
-            valorOuNull(
-                document.getElementById("herdeiro-identidade").value
-            ),
-
-        address:
-            valorOuNull(
-                document.getElementById("herdeiro-endereco").value
-            ),
-
-        kinship_degree:
-            valorOuNull(
-                document.getElementById("herdeiro-parentesco").value
-            )
+    const dados = {
+        deceased_id: Number(falecidoId),
+        name: valorOuNull(document.getElementById("herdeiro-nome").value),
+        cpf: cpfParaApi(document.getElementById("herdeiro-cpf").value),
+        identity_document: valorOuNull(document.getElementById("herdeiro-identidade").value),
+        address: mesmoEndereco
+            ? obterEnderecoFalecido()
+            : valorOuNull(document.getElementById("herdeiro-endereco").value),
+        kinship_degree: valorOuNull(document.getElementById("herdeiro-parentesco").value)
     };
 
-
     try {
-
         if (id) {
-
             delete dados.deceased_id;
-
             await atualizarHerdeiro(
                 id,
                 dados
             );
-
         } else {
-
-            await cadastrarHerdeiro(dados);
+            await cadastrarHerdeiro(
+                dados
+            );
         }
 
         formulario.reset();
-
-        document
-            .getElementById("herdeiro-id")
-            .value = "";
+        document.getElementById("herdeiro-id").value = "";
+        document.getElementById("herdeiro-endereco").disabled = false;
 
         await carregarInventario();
 
         mostrarMensagem(
-            "Herdeiro salvo com sucesso.",
-            "sucesso"
+            "Herdeiro salvo com sucesso."
         );
-
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -671,64 +705,62 @@ async function salvarHerdeiro(evento) {
     }
 }
 
+function alterarEnderecoHerdeiro() {
+    const checkbox = document.getElementById("herdeiro-mesmo-endereco");
+    const campo = document.getElementById("herdeiro-endereco");
+
+    if (checkbox.checked) {
+        campo.value = obterEnderecoFalecido() || "";
+        campo.disabled = true;
+    } else {
+        campo.disabled = false;
+    }
+}
 
 function editarHerdeiro(id) {
-
-    let herdeiros =
-        inventarioAtual.heirs || [];
-
-    let herdeiro =
-        herdeiros.find(function (item) {
-            return item.id === id;
-        });
+    const herdeiro =
+        inventarioAtual.heirs.find(
+            function (item) {
+                return item.id === id;
+            }
+        );
 
     if (!herdeiro) {
         return;
     }
 
-    document.getElementById("herdeiro-id").value =
-        herdeiro.id;
-
-    document.getElementById("herdeiro-nome").value =
-        herdeiro.name || "";
-
+    document.getElementById("herdeiro-id").value = herdeiro.id;
+    document.getElementById("herdeiro-nome").value = herdeiro.name || "";
     document.getElementById("herdeiro-cpf").value =
-        herdeiro.cpf || "";
-
+        formatarCPF(herdeiro.cpf || "");
     document.getElementById("herdeiro-identidade").value =
         herdeiro.identity_document || "";
-
     document.getElementById("herdeiro-endereco").value =
         herdeiro.address || "";
-
     document.getElementById("herdeiro-parentesco").value =
         herdeiro.kinship_degree || "";
+
+    const mesmoEndereco =
+        Boolean(obterEnderecoFalecido()) &&
+        herdeiro.address === obterEnderecoFalecido();
+
+    document.getElementById("herdeiro-mesmo-endereco").checked =
+        mesmoEndereco;
+
+    alterarEnderecoHerdeiro();
+    mostrarEtapa(1);
 }
 
-
 async function removerHerdeiro(id) {
-
-    if (
-        !confirm(
-            "Deseja excluir este herdeiro?"
-        )
-    ) {
+    if (!confirm("Deseja excluir este herdeiro?")) {
         return;
     }
 
     try {
-
         await excluirHerdeiro(id);
-
         await carregarInventario();
-
-        mostrarMensagem(
-            "Herdeiro excluído.",
-            "sucesso"
-        );
-
+        mostrarMensagem("Herdeiro excluído.");
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -736,103 +768,64 @@ async function removerHerdeiro(id) {
     }
 }
 
-
-/* ==========================================
-   Bens
-   ========================================== */
-
+/* ==============================================================
+   BENS
+   ============================================================== */
 async function salvarBem(evento) {
-
     evento.preventDefault();
 
-    let formulario =
-        document.getElementById("form-bem");
-
-    if (!confirmarCamposVazios(formulario)) {
+    if (!exigirFalecido()) {
         return;
     }
 
-    let id =
-        document.getElementById("bem-id").value;
-
-    let condominio =
+    const formulario = document.getElementById("form-bem");
+    const id = document.getElementById("bem-id").value;
+    const condominio =
         booleanoOuNull(
             document.getElementById("bem-condominio").value
         );
 
-    let percentual;
-
-    if (condominio === false) {
-
-        percentual = 100;
-
-    } else {
-
-        percentual =
-            numeroOuNull(
-                document.getElementById("bem-percentual").value
-            );
-    }
-
-
-    let dados = {
-
-        deceased_id:
-            Number(falecidoId),
-
-        description:
-            valorOuNull(
-                document.getElementById("bem-descricao").value
-            ),
-
-        value:
-            numeroOuNull(
-                document.getElementById("bem-valor").value
-            ),
-
-        is_condominium:
-            condominio,
-
+    const dados = {
+        deceased_id: Number(falecidoId),
+        description: valorOuNull(document.getElementById("bem-descricao").value),
+        value: converterMoedaParaNumero(document.getElementById("bem-valor").value),
+        is_condominium: condominio,
         ownership_percentage:
-            percentual
+            condominio === true
+                ? numeroOuNull(document.getElementById("bem-percentual").value)
+                : 100,
+        acquisition_date: valorOuNull(document.getElementById("bem-data-aquisicao").value),
+        is_private: booleanoOuNull(document.getElementById("bem-particular").value)
     };
 
-
     try {
-
         if (id) {
-
             delete dados.deceased_id;
-
             await atualizarBem(
                 id,
                 dados
             );
-
         } else {
-
-            await cadastrarBem(dados);
+            await cadastrarBem(
+                dados
+            );
         }
 
         formulario.reset();
 
-        document
-            .getElementById("bem-id")
-            .value = "";
+        document.getElementById("bem-id").value = "";
+        document.getElementById("bem-condominio").value = "false";
+        document.getElementById("bem-particular").value = "false";
+        document.getElementById("bem-valor").value = "R$ 0,00";
 
-        document
-            .getElementById("campo-percentual")
-            .style.display = "none";
+        alterarCampoCondominio();
 
         await carregarInventario();
 
         mostrarMensagem(
-            "Bem salvo com sucesso.",
-            "sucesso"
+            "Bem salvo com sucesso."
         );
-
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -840,103 +833,69 @@ async function salvarBem(evento) {
     }
 }
 
-
 function alterarCampoCondominio() {
+    const valor = document.getElementById("bem-condominio").value;
+    const campo = document.getElementById("campo-percentual");
 
-    let valor =
-        document.getElementById("bem-condominio").value;
+    campo.style.display =
+        valor === "true"
+            ? "block"
+            : "none";
 
-    let campo =
-        document.getElementById("campo-percentual");
-
-    if (valor === "true") {
-
-        campo.style.display = "block";
-
-    } else {
-
-        campo.style.display = "none";
-
-        if (valor === "false") {
-
-            document
-                .getElementById("bem-percentual")
-                .value = "100";
-        }
+    if (valor !== "true") {
+        document.getElementById("bem-percentual").value =
+            valor === "false"
+                ? "100"
+                : "";
     }
 }
 
-
 function editarBem(id) {
-
-    let bens =
-        inventarioAtual.assets || [];
-
-    let bem =
-        bens.find(function (item) {
-            return item.id === id;
-        });
+    const bem =
+        inventarioAtual.assets.find(
+            function (item) {
+                return item.id === id;
+            }
+        );
 
     if (!bem) {
         return;
     }
 
-    document.getElementById("bem-id").value =
-        bem.id;
-
+    document.getElementById("bem-id").value = bem.id;
     document.getElementById("bem-descricao").value =
         bem.description || "";
-
     document.getElementById("bem-valor").value =
-        bem.value === null
+        formatarMoeda(bem.value);
+    document.getElementById("bem-data-aquisicao").value =
+        bem.acquisition_date || "";
+    document.getElementById("bem-particular").value =
+        bem.is_private === null ||
+        bem.is_private === undefined
             ? ""
-            : bem.value;
-
-
-    if (bem.is_condominium === null) {
-
-        document.getElementById("bem-condominio").value =
-            "";
-
-    } else {
-
-        document.getElementById("bem-condominio").value =
-            String(bem.is_condominium);
-    }
-
-
+            : String(bem.is_private);
+    document.getElementById("bem-condominio").value =
+        bem.is_condominium === null ||
+        bem.is_condominium === undefined
+            ? ""
+            : String(bem.is_condominium);
     document.getElementById("bem-percentual").value =
-        bem.ownership_percentage === null
-            ? ""
-            : bem.ownership_percentage;
+        bem.ownership_percentage ?? "";
 
     alterarCampoCondominio();
+    mostrarEtapa(2);
 }
 
-
 async function removerBem(id) {
-
-    if (
-        !confirm(
-            "Deseja excluir este bem?"
-        )
-    ) {
+    if (!confirm("Deseja excluir este bem?")) {
         return;
     }
 
     try {
-
         await excluirBem(id);
-
         await carregarInventario();
-
-        mostrarMensagem(
-            "Bem excluído.",
-            "sucesso"
-        );
-
+        mostrarMensagem("Bem excluído.");
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -944,78 +903,113 @@ async function removerBem(id) {
     }
 }
 
+/* ==============================================================
+   DÍVIDAS
+   ============================================================== */
+function alterarSemDividas() {
+    const checkbox =
+        document.getElementById("divida-sem-dividas");
 
-/* ==========================================
-   Dívidas
-   ========================================== */
+    const temDividas =
+        (inventarioAtual?.debts || []).length > 0;
 
-async function salvarDivida(evento) {
+    if (checkbox.checked && temDividas) {
+        checkbox.checked = false;
 
-    evento.preventDefault();
+        mostrarMensagem(
+            "Existem dívidas cadastradas. Exclua-as antes de marcar 'Sem dívidas'.",
+            "aviso"
+        );
 
-    let formulario =
-        document.getElementById("form-divida");
-
-    if (!confirmarCamposVazios(formulario)) {
         return;
     }
 
-    let id =
+    semDividasMarcado = checkbox.checked;
+
+    [
+        "divida-descricao",
+        "divida-credor",
+        "divida-valor"
+    ].forEach(function (id) {
+        const campo = document.getElementById(id);
+
+        campo.disabled =
+            semDividasMarcado;
+
+        if (semDividasMarcado) {
+            campo.value =
+                id === "divida-valor"
+                    ? "R$ 0,00"
+                    : "";
+        }
+    });
+
+    document.getElementById("btn-salvar-divida").textContent =
+        semDividasMarcado
+            ? "Confirmar sem dívidas"
+            : "Salvar dívida";
+
+    renderizarDividas();
+}
+
+async function salvarDivida(evento) {
+    evento.preventDefault();
+
+    if (!exigirFalecido()) {
+        return;
+    }
+
+    if (semDividasMarcado) {
+        renderizarDividas();
+
+        mostrarMensagem(
+            "Informação de ausência de dívidas registrada."
+        );
+
+        return;
+    }
+
+    const formulario =
+        document.getElementById("form-divida");
+
+    const id =
         document.getElementById("divida-id").value;
 
-    let dados = {
-
-        deceased_id:
-            Number(falecidoId),
-
-        description:
-            valorOuNull(
-                document.getElementById("divida-descricao").value
-            ),
-
-        creditor:
-            valorOuNull(
-                document.getElementById("divida-credor").value
-            ),
-
-        value:
-            numeroOuNull(
-                document.getElementById("divida-valor").value
-            )
+    const dados = {
+        deceased_id: Number(falecidoId),
+        description: valorOuNull(document.getElementById("divida-descricao").value),
+        creditor: valorOuNull(document.getElementById("divida-credor").value),
+        value: converterMoedaParaNumero(document.getElementById("divida-valor").value)
     };
 
-
     try {
-
         if (id) {
-
             delete dados.deceased_id;
-
             await atualizarDivida(
                 id,
                 dados
             );
-
         } else {
-
-            await cadastrarDivida(dados);
+            await cadastrarDivida(
+                dados
+            );
         }
 
         formulario.reset();
 
-        document
-            .getElementById("divida-id")
-            .value = "";
+        document.getElementById("divida-id").value = "";
+        document.getElementById("divida-valor").value = "R$ 0,00";
+
+        semDividasMarcado = false;
+
+        alterarSemDividas();
 
         await carregarInventario();
 
         mostrarMensagem(
-            "Dívida salva com sucesso.",
-            "sucesso"
+            "Dívida salva com sucesso."
         );
-
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -1023,60 +1017,45 @@ async function salvarDivida(evento) {
     }
 }
 
-
 function editarDivida(id) {
-
-    let dividas =
-        inventarioAtual.debts || [];
-
-    let divida =
-        dividas.find(function (item) {
-            return item.id === id;
-        });
+    const divida =
+        inventarioAtual.debts.find(
+            function (item) {
+                return item.id === id;
+            }
+        );
 
     if (!divida) {
         return;
     }
 
-    document.getElementById("divida-id").value =
-        divida.id;
+    semDividasMarcado = false;
 
+    document.getElementById("divida-sem-dividas").checked = false;
+
+    alterarSemDividas();
+
+    document.getElementById("divida-id").value = divida.id;
     document.getElementById("divida-descricao").value =
         divida.description || "";
-
     document.getElementById("divida-credor").value =
         divida.creditor || "";
-
     document.getElementById("divida-valor").value =
-        divida.value === null
-            ? ""
-            : divida.value;
+        formatarMoeda(divida.value);
+
+    mostrarEtapa(3);
 }
 
-
 async function removerDivida(id) {
-
-    if (
-        !confirm(
-            "Deseja excluir esta dívida?"
-        )
-    ) {
+    if (!confirm("Deseja excluir esta dívida?")) {
         return;
     }
 
     try {
-
         await excluirDivida(id);
-
         await carregarInventario();
-
-        mostrarMensagem(
-            "Dívida excluída.",
-            "sucesso"
-        );
-
+        mostrarMensagem("Dívida excluída.");
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -1084,60 +1063,56 @@ async function removerDivida(id) {
     }
 }
 
-
-/* ==========================================
-   Carregamento do Inventário
-   ========================================== */
-
+/* ==============================================================
+   CARREGAMENTO DO INVENTÁRIO
+   ============================================================== */
 async function carregarInventario() {
-
     if (!falecidoId) {
         return;
     }
 
     try {
-
         inventarioAtual =
             await buscarInventario(falecidoId);
 
-        if (!inventarioAtual) {
-            inventarioAtual = {};
-        }
+        inventarioAtual.heirs =
+            Array.isArray(inventarioAtual.heirs)
+                ? inventarioAtual.heirs
+                : [];
 
+        inventarioAtual.assets =
+            Array.isArray(inventarioAtual.assets)
+                ? inventarioAtual.assets
+                : [];
 
-        if (!Array.isArray(inventarioAtual.heirs)) {
-            inventarioAtual.heirs = [];
-        }
+        inventarioAtual.debts =
+            Array.isArray(inventarioAtual.debts)
+                ? inventarioAtual.debts
+                : [];
 
-        if (!Array.isArray(inventarioAtual.assets)) {
-            inventarioAtual.assets = [];
-        }
-
-        if (!Array.isArray(inventarioAtual.debts)) {
-            inventarioAtual.debts = [];
-        }
-
-        if (!inventarioAtual.summary) {
-            inventarioAtual.summary = {};
-        }
-
+        inventarioAtual.summary =
+            inventarioAtual.summary || {};
 
         preencherFalecido();
-
         preencherConjuge();
 
+        renderizarFalecido();
+        renderizarConjuge();
         renderizarHerdeiros();
-
         renderizarBens();
-
         renderizarDividas();
 
         atualizarResumoLateral();
-
         atualizarTelasDeResumo();
 
-    } catch (erro) {
+        const seletor =
+            document.getElementById("inventario-anterior");
 
+        if (seletor) {
+            seletor.value =
+                String(falecidoId);
+        }
+    } catch (erro) {
         mostrarMensagem(
             erro.message,
             "erro"
@@ -1145,503 +1120,434 @@ async function carregarInventario() {
     }
 }
 
-
-/* ==========================================
-   Preenchimento dos Formulários
-   ========================================== */
-
+/* ==============================================================
+   PREENCHIMENTO DOS FORMULÁRIOS
+   ============================================================== */
 function preencherFalecido() {
-
-    let falecido =
+    const falecido =
         inventarioAtual.deceased;
-
-    if (!falecido) {
-        return;
-    }
 
     document.getElementById("falecido-nome").value =
         falecido.name || "";
-
     document.getElementById("falecido-data").value =
         falecido.date_of_death || "";
-
     document.getElementById("falecido-cpf").value =
-        falecido.cpf || "";
-
+        formatarCPF(falecido.cpf || "");
     document.getElementById("falecido-identidade").value =
         falecido.identity_document || "";
-
     document.getElementById("falecido-endereco").value =
         falecido.last_address || "";
-
     document.getElementById("falecido-estado-civil").value =
         falecido.marital_status || "";
-
     document.getElementById("falecido-regime").value =
         falecido.property_regime || "";
-
-
-    if (
+    document.getElementById("falecido-testamento").value =
         falecido.has_will === null ||
         falecido.has_will === undefined
-    ) {
+            ? ""
+            : String(falecido.has_will);
 
-        document.getElementById("falecido-testamento").value =
-            "";
-
-    } else {
-
-        document.getElementById("falecido-testamento").value =
-            String(falecido.has_will);
-    }
+    alterarCampoParticipacao();
 }
 
-
 function preencherConjuge() {
-
-    let conjuge =
+    const conjuge =
         inventarioAtual.spouse;
 
+    const formulario =
+        document.getElementById("form-conjuge");
+
     if (!conjuge) {
+        formulario.reset();
 
-        document
-            .getElementById("form-conjuge")
-            .reset();
+        document.getElementById("conjuge-id").value = "";
+        document.getElementById("conjuge-endereco").disabled = false;
 
-        document
-            .getElementById("conjuge-id")
-            .value = "";
+        alterarCampoParticipacao();
 
         return;
     }
 
     document.getElementById("conjuge-id").value =
         conjuge.id;
-
     document.getElementById("conjuge-nome").value =
         conjuge.name || "";
-
     document.getElementById("conjuge-cpf").value =
-        conjuge.cpf || "";
-
+        formatarCPF(conjuge.cpf || "");
     document.getElementById("conjuge-identidade").value =
         conjuge.identity_document || "";
-
     document.getElementById("conjuge-endereco").value =
         conjuge.address || "";
+    document.getElementById("conjuge-data-casamento").value =
+        conjuge.marriage_date || "";
+    document.getElementById("conjuge-participacao").value =
+        conjuge.participation_percentage ?? 50;
+
+    const mesmoEndereco =
+        Boolean(obterEnderecoFalecido()) &&
+        conjuge.address === obterEnderecoFalecido();
+
+    document.getElementById("conjuge-mesmo-endereco").checked =
+        mesmoEndereco;
+
+    alterarEnderecoConjuge();
+    alterarCampoParticipacao();
 }
 
+/* ==============================================================
+   CARDS E LISTAS
+   ============================================================== */
+function renderizarFalecido() {
+    const falecido =
+        inventarioAtual.deceased;
 
-/* ==========================================
-   Listas
-   ========================================== */
+    const area =
+        document.getElementById("card-falecido");
+
+    area.innerHTML = `
+        <div class="card">
+            <h4>${escaparHtml(falecido.name || "Falecido sem nome")}</h4>
+            <p>CPF: ${escaparHtml(formatarCPF(falecido.cpf || "")) || "-"}</p>
+            <p>Falecimento: ${escaparHtml(formatarData(falecido.date_of_death))}</p>
+            <p>Regime de bens: ${escaparHtml(nomeRegime(falecido.property_regime))}</p>
+            <div class="card-acoes">
+                <button class="btn-editar" type="button" onclick="editarFalecido()">Editar</button>
+            </div>
+        </div>
+    `;
+}
+
+function renderizarConjuge() {
+    const conjuge =
+        inventarioAtual.spouse;
+
+    const area =
+        document.getElementById("card-conjuge");
+
+    area.innerHTML = "";
+
+    if (!conjuge) {
+        return;
+    }
+
+    area.innerHTML = `
+        <div class="card">
+            <h4>${escaparHtml(conjuge.name || "Cônjuge sem nome")}</h4>
+            <p>CPF: ${escaparHtml(formatarCPF(conjuge.cpf || "")) || "-"}</p>
+            <p>Data do casamento / união: ${escaparHtml(formatarData(conjuge.marriage_date))}</p>
+            <p>Endereço: ${escaparHtml(conjuge.address || "-")}</p>
+            <div class="card-acoes">
+                <button class="btn-editar" type="button" onclick="editarConjuge()">Editar</button>
+                <button class="btn-excluir" type="button" onclick="removerConjugeAtual()">Excluir</button>
+            </div>
+        </div>
+    `;
+}
 
 function renderizarHerdeiros() {
-
-    let lista =
+    const lista =
         document.getElementById("lista-herdeiros");
 
     lista.innerHTML = "";
 
-    let herdeiros =
-        inventarioAtual.heirs || [];
-
-    herdeiros.forEach(function (herdeiro) {
-
+    inventarioAtual.heirs.forEach(function (herdeiro) {
         lista.innerHTML += `
             <div class="card">
-
-                <h4>
-                    ${escaparHtml(
-            herdeiro.name || "Sem nome"
-        )}
-                </h4>
-
-                <p>
-                    CPF:
-                    ${escaparHtml(
-            herdeiro.cpf || "-"
-        )}
-                </p>
-
-                <p>
-                    Parentesco:
-                    ${escaparHtml(
-            herdeiro.kinship_degree || "-"
-        )}
-                </p>
-
+                <h4>${escaparHtml(herdeiro.name || "Herdeiro sem nome")}</h4>
+                <p>CPF: ${escaparHtml(formatarCPF(herdeiro.cpf || "")) || "-"}</p>
+                <p>Parentesco: ${escaparHtml(nomeParentesco(herdeiro.kinship_degree))}</p>
+                <p>Endereço: ${escaparHtml(herdeiro.address || "-")}</p>
                 <div class="card-acoes">
-
-                    <button
-                        class="btn-editar"
-                        onclick="editarHerdeiro(${herdeiro.id})"
-                    >
-                        Editar
-                    </button>
-
-                    <button
-                        class="btn-excluir"
-                        onclick="removerHerdeiro(${herdeiro.id})"
-                    >
-                        Excluir
-                    </button>
-
+                    <button class="btn-editar" type="button" onclick="editarHerdeiro(${herdeiro.id})">Editar</button>
+                    <button class="btn-excluir" type="button" onclick="removerHerdeiro(${herdeiro.id})">Excluir</button>
                 </div>
-
             </div>
         `;
     });
 }
 
-
 function renderizarBens() {
-
-    let lista =
+    const lista =
         document.getElementById("lista-bens");
 
     lista.innerHTML = "";
 
-    let bens =
-        inventarioAtual.assets || [];
-
-    bens.forEach(function (bem) {
+    inventarioAtual.assets.forEach(function (bem) {
+        const particular =
+            bem.is_private === null ||
+            bem.is_private === undefined
+                ? "Não informado"
+                : bem.is_private
+                    ? "Sim"
+                    : "Não";
 
         lista.innerHTML += `
             <div class="card">
-
-                <h4>
-                    ${escaparHtml(
-            bem.description || "Bem sem descrição"
-        )}
-                </h4>
-
-                <p>
-                    Valor:
-                    ${formatarMoeda(bem.value)}
-                </p>
-
-                <p>
-                    Percentual do falecido:
-                    ${bem.ownership_percentage ?? "-"}%
-                </p>
-
+                <h4>${escaparHtml(bem.description || "Bem sem descrição")}</h4>
+                <p>Valor: ${formatarMoeda(bem.value)}</p>
+                <p>Data de aquisição: ${escaparHtml(formatarData(bem.acquisition_date))}</p>
+                <p>Bem particular: ${particular}</p>
+                <p>Percentual do falecido: ${bem.ownership_percentage ?? "-"}%</p>
                 <div class="card-acoes">
-
-                    <button
-                        class="btn-editar"
-                        onclick="editarBem(${bem.id})"
-                    >
-                        Editar
-                    </button>
-
-                    <button
-                        class="btn-excluir"
-                        onclick="removerBem(${bem.id})"
-                    >
-                        Excluir
-                    </button>
-
+                    <button class="btn-editar" type="button" onclick="editarBem(${bem.id})">Editar</button>
+                    <button class="btn-excluir" type="button" onclick="removerBem(${bem.id})">Excluir</button>
                 </div>
-
             </div>
         `;
     });
 }
 
-
 function renderizarDividas() {
-
-    let lista =
+    const lista =
         document.getElementById("lista-dividas");
 
     lista.innerHTML = "";
 
-    let dividas =
-        inventarioAtual.debts || [];
+    if (
+        inventarioAtual &&
+        inventarioAtual.debts.length === 0 &&
+        semDividasMarcado
+    ) {
+        lista.innerHTML = `
+            <div class="card">
+                <h4>Sem dívidas</h4>
+                <p>Foi informado que não existem dívidas a cadastrar.</p>
+            </div>
+        `;
+        return;
+    }
 
-    dividas.forEach(function (divida) {
+    if (!inventarioAtual) {
+        return;
+    }
 
+    inventarioAtual.debts.forEach(function (divida) {
         lista.innerHTML += `
             <div class="card">
-
-                <h4>
-                    ${escaparHtml(
-            divida.description || "Dívida sem descrição"
-        )}
-                </h4>
-
-                <p>
-                    Credor:
-                    ${escaparHtml(
-            divida.creditor || "-"
-        )}
-                </p>
-
-                <p>
-                    Valor:
-                    ${formatarMoeda(divida.value)}
-                </p>
-
+                <h4>${escaparHtml(divida.description || "Dívida sem descrição")}</h4>
+                <p>Credor: ${escaparHtml(divida.creditor || "-")}</p>
+                <p>Valor: ${formatarMoeda(divida.value)}</p>
                 <div class="card-acoes">
-
-                    <button
-                        class="btn-editar"
-                        onclick="editarDivida(${divida.id})"
-                    >
-                        Editar
-                    </button>
-
-                    <button
-                        class="btn-excluir"
-                        onclick="removerDivida(${divida.id})"
-                    >
-                        Excluir
-                    </button>
-
+                    <button class="btn-editar" type="button" onclick="editarDivida(${divida.id})">Editar</button>
+                    <button class="btn-excluir" type="button" onclick="removerDivida(${divida.id})">Excluir</button>
                 </div>
-
             </div>
         `;
     });
 }
 
-
-/* ==========================================
-   Resumo Lateral
-   ========================================== */
-
+/* ==============================================================
+   RESUMO LATERAL
+   ============================================================== */
 function atualizarResumoLateral() {
-
-    let resumo =
-        inventarioAtual.summary || {};
-
-    let herdeiros =
-        inventarioAtual.heirs || [];
-
-    let bens =
-        inventarioAtual.assets || [];
-
-    let dividas =
-        inventarioAtual.debts || [];
-
+    const resumo =
+        inventarioAtual.summary;
 
     document.getElementById("resumo-nome").textContent =
-        inventarioAtual.deceased?.name ||
-        "Não informado";
-
-
+        inventarioAtual.deceased?.name || "Não informado";
     document.getElementById("resumo-herdeiros").textContent =
-        herdeiros.length;
-
-
+        inventarioAtual.heirs.length;
     document.getElementById("resumo-bens").textContent =
-        bens.length;
-
-
+        inventarioAtual.assets.length;
     document.getElementById("resumo-dividas").textContent =
-        dividas.length;
-
-
+        inventarioAtual.debts.length;
+    document.getElementById("resumo-meacao").textContent =
+        formatarMoeda(resumo.marital_share_value);
     document.getElementById("resumo-liquido").textContent =
-        formatarMoeda(
-            resumo.net_estate_value
-        );
+        formatarMoeda(resumo.net_estate_value);
 }
 
-
-/* ==========================================
-   Partilha e Auto de Orçamento
-   ========================================== */
-
-function atualizarTelasDeResumo() {
-
-    if (!inventarioAtual) {
+/* ==============================================================
+   MEAÇÃO E PARTILHA
+   ============================================================== */
+async function calcularMeacao() {
+    if (!exigirFalecido()) {
         return;
     }
 
-    let resumo =
-        inventarioAtual.summary || {};
+    await carregarInventario();
 
+    mostrarMensagem(
+        "Meação e partilha recalculadas."
+    );
+}
 
-    document
-        .querySelectorAll(".valor-bens")
-        .forEach(function (elemento) {
+function atualizarTelasDeResumo() {
+    const resumo =
+        inventarioAtual.summary;
 
-            elemento.textContent =
-                formatarMoeda(
-                    resumo.total_deceased_value
-                );
-        });
-
-
-    document
-        .querySelectorAll(".valor-dividas")
-        .forEach(function (elemento) {
-
-            elemento.textContent =
-                formatarMoeda(
-                    resumo.total_debt_value
-                );
-        });
-
-
-    document
-        .querySelectorAll(".valor-liquido")
-        .forEach(function (elemento) {
-
-            elemento.textContent =
-                formatarMoeda(
-                    resumo.net_estate_value
-                );
-        });
-
+    document.getElementById("valor-base-meacao").textContent =
+        formatarMoeda(resumo.marital_base_value);
+    document.getElementById("valor-meacao").textContent =
+        formatarMoeda(resumo.marital_share_value);
+    document.getElementById("valor-heranca-bruta").textContent =
+        formatarMoeda(resumo.estate_before_debts);
+    document.getElementById("valor-heranca-liquida").textContent =
+        formatarMoeda(resumo.net_estate_value);
+    document.getElementById("orcamento-ativo").textContent =
+        formatarMoeda(resumo.total_deceased_value);
+    document.getElementById("orcamento-passivo").textContent =
+        formatarMoeda(resumo.total_debt_value);
+    document.getElementById("orcamento-meacao").textContent =
+        formatarMoeda(resumo.marital_share_value);
+    document.getElementById("orcamento-liquido").textContent =
+        formatarMoeda(resumo.net_estate_value);
 
     renderizarPartilha();
-
+    renderizarAutoOrcamento();
     renderizarPagamento();
 }
 
+function obterPartilhas() {
+    return Array.isArray(
+        inventarioAtual.summary?.shares
+    )
+        ? inventarioAtual.summary.shares
+        : [];
+}
 
 function renderizarPartilha() {
+    const corpo =
+        document.getElementById("tabela-partilha-corpo");
 
-    let corpo =
-        document.getElementById(
-            "tabela-partilha-corpo"
-        );
-
-    corpo.innerHTML = "";
-
-    let valor =
-        inventarioAtual.summary
-            ?.equal_share_estimate;
-
-    let herdeiros =
-        inventarioAtual.heirs || [];
-
-
-    herdeiros.forEach(function (herdeiro) {
-
-        corpo.innerHTML += `
-            <tr>
-
-                <td>
-                    ${escaparHtml(
-            herdeiro.name || "-"
-        )}
-                </td>
-
-                <td>
-                    ${escaparHtml(
-            herdeiro.kinship_degree || "-"
-        )}
-                </td>
-
-                <td>
-                    ${formatarMoeda(valor)}
-                </td>
-
-            </tr>
-        `;
-    });
-}
-
-
-function renderizarPagamento() {
-
-    let corpo =
-        document.getElementById(
-            "tabela-pagamento-corpo"
-        );
+    const partilhas =
+        obterPartilhas();
 
     corpo.innerHTML = "";
 
+    if (partilhas.length === 0) {
+        corpo.innerHTML =
+            '<tr><td colspan="3">Nenhum quinhão calculado.</td></tr>';
 
-    if (inventarioAtual.spouse) {
-
-        corpo.innerHTML += `
-            <tr>
-
-                <td>
-                    ${escaparHtml(
-            inventarioAtual.spouse.name || "-"
-        )}
-                </td>
-
-                <td>
-                    Cônjuge / Meeiro
-                </td>
-
-                <td>
-                    A definir
-                </td>
-
-            </tr>
-        `;
-    }
-
-
-    let valor =
-        inventarioAtual.summary
-            ?.equal_share_estimate;
-
-    let herdeiros =
-        inventarioAtual.heirs || [];
-
-
-    herdeiros.forEach(function (herdeiro) {
-
-        corpo.innerHTML += `
-            <tr>
-
-                <td>
-                    ${escaparHtml(
-            herdeiro.name || "-"
-        )}
-                </td>
-
-                <td>
-                    Herdeiro
-                </td>
-
-                <td>
-                    ${formatarMoeda(valor)}
-                </td>
-
-            </tr>
-        `;
-    });
-}
-
-
-/* ==========================================
-   ITCM
-   ========================================== */
-
-async function calcularITD() {
-
-    if (!inventarioAtual) {
         return;
     }
 
-    let base =
+    partilhas.forEach(function (item) {
+        corpo.innerHTML += `
+            <tr>
+                <td>${escaparHtml(item.name || "-")}</td>
+                <td>${escaparHtml(item.quality || "-")}</td>
+                <td>${formatarMoeda(item.value)}</td>
+            </tr>
+        `;
+    });
+}
+
+/* ==============================================================
+   AUTO DE ORÇAMENTO
+   ============================================================== */
+function renderizarAutoOrcamento() {
+    const corpo =
+        document.getElementById("tabela-orcamento-corpo");
+
+    const partilhas =
+        obterPartilhas();
+
+    const total =
         Number(
-            inventarioAtual.summary
-                ?.net_estate_value || 0
+            inventarioAtual.summary.net_estate_value || 0
         );
 
+    corpo.innerHTML = "";
+
+    if (partilhas.length === 0) {
+        corpo.innerHTML =
+            '<tr><td colspan="4">Nenhum quinhão calculado.</td></tr>';
+
+        return;
+    }
+
+    partilhas.forEach(function (item) {
+        const valor =
+            Number(item.value || 0);
+
+        const percentual =
+            total > 0
+                ? (valor / total) * 100
+                : 0;
+
+        corpo.innerHTML += `
+            <tr>
+                <td>${escaparHtml(item.name || "-")}</td>
+                <td>${escaparHtml(item.quality || "-")}</td>
+                <td>${formatarPercentual(percentual)}</td>
+                <td>${formatarMoeda(item.value)}</td>
+            </tr>
+        `;
+    });
+}
+
+/* ==============================================================
+   FOLHA DE PAGAMENTO
+   ============================================================== */
+function renderizarPagamento() {
+    const corpo =
+        document.getElementById("tabela-pagamento-corpo");
+
+    const resumo =
+        inventarioAtual.summary;
+
+    const partilhas =
+        obterPartilhas();
+
+    corpo.innerHTML = "";
+
+    if (inventarioAtual.spouse) {
+        corpo.innerHTML += `
+            <tr>
+                <td>${escaparHtml(inventarioAtual.spouse.name || "Cônjuge")}</td>
+                <td>Cônjuge / Meeiro</td>
+                <td>${formatarMoeda(resumo.spouse_total_value)}</td>
+            </tr>
+        `;
+    }
+
+    partilhas
+        .filter(function (item) {
+            return (
+                item.heir_id !== null &&
+                item.heir_id !== undefined
+            );
+        })
+        .forEach(function (item) {
+            corpo.innerHTML += `
+                <tr>
+                    <td>${escaparHtml(item.name || "-")}</td>
+                    <td>${escaparHtml(item.quality || "Herdeiro")}</td>
+                    <td>${formatarMoeda(item.value)}</td>
+                </tr>
+            `;
+        });
+
+    if (corpo.innerHTML === "") {
+        corpo.innerHTML =
+            '<tr><td colspan="3">Nenhum pagamento calculado.</td></tr>';
+    }
+}
+
+/* ==============================================================
+   ITCM
+   ============================================================== */
+async function calcularITD() {
+    if (!inventarioAtual) {
+        mostrarMensagem(
+            "Carregue um inventário antes de calcular o ITCM.",
+            "erro"
+        );
+        return;
+    }
+
+    const base =
+        Number(
+            inventarioAtual.summary?.net_estate_value || 0
+        );
 
     try {
-
-        let resultado =
+        const resultado =
             await estimarITD(base);
 
-
         document.getElementById("itd-base").textContent =
-            formatarMoeda(
-                resultado.base_value
-            );
-
+            formatarMoeda(resultado.base_value);
 
         document.getElementById("itd-ufir").textContent =
             Number(
@@ -1653,27 +1559,17 @@ async function calcularITD() {
                 }
             );
 
-
         document.getElementById("itd-aliquota").textContent =
-            (
-                Number(
-                    resultado.rate || 0
-                ) * 100
-            ).toLocaleString("pt-BR") +
-            "%";
-
-
-        document.getElementById("itd-valor").textContent =
-            formatarMoeda(
-                resultado.estimated_tax
+            formatarPercentual(
+                Number(resultado.rate || 0) * 100
             );
 
+        document.getElementById("itd-valor").textContent =
+            formatarMoeda(resultado.estimated_tax);
 
         document.getElementById("resultado-itd").style.display =
             "block";
-
     } catch (erro) {
-
         mostrarMensagem(
             erro.message,
             "erro"
@@ -1681,30 +1577,95 @@ async function calcularITD() {
     }
 }
 
+/* ==============================================================
+   FINALIZAÇÃO DO INVENTÁRIO
+   ============================================================== */
+function finalizarInventario() {
+    if (!exigirFalecido()) {
+        return;
+    }
 
-/* ==========================================
-   Novo Inventário
-   ========================================== */
+    mostrarMensagem(
+        "Inventário finalizado. Os dados permanecem salvos e podem ser reabertos pelo menu lateral.",
+        "sucesso"
+    );
+}
 
+/* ==============================================================
+   NOVO INVENTÁRIO
+   ============================================================== */
 function novoInventario() {
-
-    let confirmar =
+    const confirmar =
         confirm(
-            "Deseja iniciar um novo preenchimento? " +
-            "Os dados já salvos no backend não serão apagados."
+            "Deseja iniciar um novo inventário? O inventário atual continuará salvo para consulta."
         );
 
     if (!confirmar) {
         return;
     }
 
-    localStorage.removeItem(
-        "falecidoId"
-    );
-
     falecidoId = null;
-
     inventarioAtual = null;
+    semDividasMarcado = false;
 
-    location.reload();
+    document.querySelectorAll("form").forEach(function (formulario) {
+        formulario.reset();
+    });
+
+    document.getElementById("conjuge-endereco").disabled = false;
+    document.getElementById("herdeiro-endereco").disabled = false;
+    document.getElementById("divida-descricao").disabled = false;
+    document.getElementById("divida-credor").disabled = false;
+    document.getElementById("divida-valor").disabled = false;
+
+    [
+        "card-falecido",
+        "card-conjuge",
+        "lista-herdeiros",
+        "lista-bens",
+        "lista-dividas",
+        "tabela-partilha-corpo",
+        "tabela-orcamento-corpo",
+        "tabela-pagamento-corpo"
+    ].forEach(function (id) {
+        document.getElementById(id).innerHTML = "";
+    });
+
+    document.getElementById("bem-valor").value = "R$ 0,00";
+    document.getElementById("divida-valor").value = "R$ 0,00";
+    document.getElementById("resultado-itd").style.display = "none";
+    document.getElementById("inventario-anterior").value = "";
+    document.getElementById("resumo-nome").textContent = "Não informado";
+    document.getElementById("resumo-herdeiros").textContent = "0";
+    document.getElementById("resumo-bens").textContent = "0";
+    document.getElementById("resumo-dividas").textContent = "0";
+    document.getElementById("resumo-meacao").textContent = "R$ 0,00";
+    document.getElementById("resumo-liquido").textContent = "R$ 0,00";
+
+    [
+        "valor-base-meacao",
+        "valor-meacao",
+        "valor-heranca-bruta",
+        "valor-heranca-liquida",
+        "orcamento-ativo",
+        "orcamento-passivo",
+        "orcamento-meacao",
+        "orcamento-liquido",
+        "itd-base",
+        "itd-valor"
+    ].forEach(function (id) {
+        document.getElementById(id).textContent = "R$ 0,00";
+    });
+
+    document.getElementById("itd-ufir").textContent = "0";
+    document.getElementById("itd-aliquota").textContent = "0%";
+
+    alterarCampoParticipacao();
+    alterarCampoCondominio();
+    mostrarEtapa(0);
+
+    mostrarMensagem(
+        "Novo inventário iniciado. O inventário anterior permanece salvo no banco.",
+        "sucesso"
+    );
 }
